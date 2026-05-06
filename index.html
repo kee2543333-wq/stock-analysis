@@ -121,8 +121,17 @@ a{color:var(--accent);text-decoration:none}
 .info-item{display:flex;flex-direction:column;gap:2px}
 .info-label{font-size:11px;color:var(--muted)}
 .info-value{font-size:16px;font-weight:700}
-.tv-container{background:#000;border-radius:8px;overflow:hidden;min-height:360px}
-#tv-chart{width:100%;height:360px}
+/* price comparison */
+.price-bar-wrap{background:var(--bg);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.price-bar-track{height:12px;border-radius:6px;background:#e2e8f0;position:relative;margin:8px 0 4px}
+.price-bar-fill{height:100%;border-radius:6px;transition:width .4s}
+.price-bar-needle{position:absolute;top:-5px;width:3px;height:22px;background:#1e293b;border-radius:2px;transform:translateX(-50%)}
+.price-zone-label{font-size:10px;color:var(--muted);display:flex;justify-content:space-between;margin-top:2px}
+.iv-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.iv-row:last-child{border-bottom:none}
+.iv-label{color:var(--muted);flex:1;font-size:12px}
+.iv-val{font-weight:700;min-width:70px;text-align:right}
+.iv-diff{font-size:11px;min-width:60px;text-align:right}
 
 /* === TARGET PRICE TABLE === */
 .target-table-wrap{overflow-x:auto;margin-top:var(--gap)}
@@ -297,7 +306,7 @@ a{color:var(--accent);text-decoration:none}
           <tr>
             <th onclick="sortBy('ticker')">Ticker ↕</th>
             <th onclick="sortBy('market')">ตลาด ↕</th>
-            <th onclick="sortBy('price')">ราคา ↕</th>
+            <th onclick="sortBy('price')">ราคา ณ วันวิเคราะห์ ↕</th>
             <th onclick="sortBy('avgPE')">P/E เฉลี่ย ↕</th>
             <th onclick="sortBy('eps')">EPS ↕</th>
             <th>n (ปี)</th>
@@ -339,16 +348,13 @@ a{color:var(--accent);text-decoration:none}
         </div>
       </div>
 
-      <!-- TradingView -->
-      <div class="detail-card" style="margin-bottom:var(--gap)">
-        <h4>กราฟราคา (TradingView)</h4>
-        <div class="tv-container">
-          <div id="tv-chart"></div>
+      <!-- Price vs IV -->
+      <div class="detail-card" style="margin-bottom:var(--gap)" id="priceCompCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h4 style="margin:0">💰 ราคา vs มูลค่าที่แท้จริง</h4>
+          <a id="tvLink" href="#" target="_blank" style="font-size:12px;font-weight:600;color:var(--accent);background:#eff6ff;padding:5px 12px;border-radius:6px;border:1px solid #bfdbfe;white-space:nowrap">💹 ราคาปัจจุบัน (TradingView) →</a>
         </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--muted)">
-          ⓘ กราฟโหลดจาก TradingView — ต้องการอินเทอร์เน็ต &nbsp;|&nbsp;
-          <a id="tvLink" href="#" target="_blank">เปิดใน TradingView →</a>
-        </div>
+        <div id="priceCompContent"></div>
       </div>
 
       <!-- Target Price Matrix -->
@@ -783,7 +789,7 @@ function openDetail(ticker) {
   `;
   document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openEditModal(ticker); };
   document.getElementById('detailInfo').innerHTML = `
-    <div class="info-item"><span class="info-label">ราคาปัจจุบัน</span><span class="info-value">${curr}${s.price.toFixed(2)}</span></div>
+    <div class="info-item"><span class="info-label">ราคา ณ วันวิเคราะห์</span><span class="info-value">${curr}${s.price.toFixed(2)}</span></div>
     <div class="info-item"><span class="info-label">P/E เฉลี่ย</span><span class="info-value">${s.avgPE.toFixed(2)}x</span></div>
     <div class="info-item"><span class="info-label">EPS</span><span class="info-value">${curr}${s.eps.toFixed(2)}</span></div>
     <div class="info-item"><span class="info-label">n (ปีประเมิน)</span><span class="info-value">${s.n} ปี</span></div>
@@ -796,12 +802,11 @@ function openDetail(ticker) {
   renderPEChart(s);
   // Target matrix
   renderTargetTable(s);
-  // TradingView
-  loadTVChart(s.tvSymbol, ticker);
   // TV Link
   const tvUrl = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(s.tvSymbol)}`;
   document.getElementById('tvLink').href = tvUrl;
-  document.getElementById('tvLink').textContent = `เปิด ${s.tvSymbol} ใน TradingView →`;
+  // Price vs IV
+  renderPriceComparison(s);
 }
 
 function closeDetail() {
@@ -872,7 +877,7 @@ function renderTargetTable(s) {
     </tr>`;
   });
   html += `<tr class="current-row">
-    <td><strong>⭐ ราคาปัจจุบัน</strong></td>
+    <td><strong>⭐ ราคา ณ วันวิเคราะห์</strong></td>
     <td colspan="3" style="text-align:center;font-size:16px">${curr}${fmt(s.price)}</td>
   </tr>`;
   html += `</tbody></table>
@@ -885,72 +890,108 @@ function renderTargetTable(s) {
 }
 
 // ============================================================
-// TRADINGVIEW CHART
+// PRICE vs IV COMPARISON
 // ============================================================
-function loadTVChart(tvSymbol, ticker) {
-  const container = document.getElementById('tv-chart');
-  container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:360px;color:#888;flex-direction:column;gap:10px">
-    <div style="font-size:32px">📊</div>
-    <div>กำลังโหลด TradingView Chart สำหรับ ${tvSymbol}...</div>
-    <div style="font-size:12px;opacity:.6">ต้องการการเชื่อมต่ออินเทอร์เน็ต</div>
-  </div>`;
-  // Clear old widget
-  if (window.__tvWidgetContainer) {
-    window.__tvWidgetContainer.innerHTML = '';
-  }
-  const uniqueId = 'tvw_' + Math.random().toString(36).slice(2);
-  container.innerHTML = `<div id="${uniqueId}" style="width:100%;height:360px"></div>`;
-  window.__tvWidgetContainer = container;
-  function createWidget() {
-    try {
-      if (window.TradingView && window.TradingView.widget) {
-        new window.TradingView.widget({
-          container_id: uniqueId,
-          width: '100%',
-          height: 360,
-          symbol: tvSymbol,
-          interval: 'W',
-          theme: 'light',
-          style: '1',
-          locale: 'en',
-          toolbar_bg: '#f1f3f6',
-          enable_publishing: false,
-          allow_symbol_change: true,
-          hide_top_toolbar: false,
-          save_image: false,
-          studies: [],
-        });
-      } else {
-        // Fallback: show iframe with mini chart
-        container.innerHTML = `<iframe
-          src="https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSymbol)}&interval=W&theme=light&style=1&locale=en&utm_source=www&utm_medium=widget"
-          width="100%" height="360" frameborder="0" allowtransparency="true"
-          style="border-radius:6px">
-        </iframe>`;
-      }
-    } catch(e) {
-      container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">
-        ไม่สามารถโหลด TradingView ได้ —
-        <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}" target="_blank" style="color:var(--accent)">เปิดในแท็บใหม่ →</a>
-      </div>`;
-    }
-  }
-  if (!document.getElementById('tvScript')) {
-    const script = document.createElement('script');
-    script.id = 'tvScript';
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.onload = createWidget;
-    script.onerror = () => {
-      container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">
-        ไม่สามารถโหลด TradingView ได้ — ลองเปิดใน
-        <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}" target="_blank" style="color:var(--accent)">TradingView →</a>
-      </div>`;
-    };
-    document.head.appendChild(script);
-  } else {
-    setTimeout(createWidget, 100);
-  }
+function renderPriceComparison(s) {
+  const box = document.getElementById('priceCompContent');
+  if (!box) return;
+  const curr = s.market === 'US' ? '$' : '฿';
+  const fmt = v => v == null ? '—' : (v >= 1000 ? v.toFixed(0) : v.toFixed(2));
+  const pct = (v, base) => {
+    if (!base || !v) return '';
+    const d = ((v - base) / base) * 100;
+    const cls = d >= 0 ? 'ret-great' : 'ret-low';
+    return `<span class="${cls}">${d >= 0 ? '+' : ''}${d.toFixed(1)}%</span>`;
+  };
+
+  const rates = [0.15, 0.20, 0.30];
+  const mosList = [0, 0.15, 0.30];
+  const rateLbl = {0.15:'15%', 0.20:'20%', 0.30:'30%'};
+  const mosLbl  = {0:'ไม่มี MOS', 0.15:'MOS 15%', 0.30:'MOS 30%'};
+
+  // คำนวณ IV ที่ discount 15% (หลัก) สำหรับ price bar
+  const iv15_0  = calcIV(s.eps, s.avgPE, s.n, 0.15);
+  const iv15_15 = iv15_0 * 0.85;
+  const iv15_30 = iv15_0 * 0.70;
+  const maxBar  = Math.max(iv15_0 * 1.2, s.price * 1.1);
+
+  // Price bar
+  const pricePos = Math.min((s.price / maxBar) * 100, 100);
+  const ivPos    = Math.min((iv15_0  / maxBar) * 100, 100);
+  const iv15Pos  = Math.min((iv15_15 / maxBar) * 100, 100);
+
+  const zone = s.price <= iv15_15 ? '#10b981' : s.price <= iv15_0 ? '#f59e0b' : '#ef4444';
+  const zoneLabel = s.price <= iv15_15 ? '🟢 ราคาต่ำกว่า IV (น่าซื้อ)' :
+                    s.price <= iv15_0  ? '🟡 ราคาใกล้เคียง IV' : '🔴 ราคาสูงกว่า IV';
+
+  let html = `
+  <div class="price-bar-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">ราคาที่ใช้วิเคราะห์</div><div style="font-size:22px;font-weight:800">${curr}${fmt(s.price)}</div></div>
+      <div style="font-size:13px">${zoneLabel}</div>
+    </div>
+    <div class="price-bar-track">
+      <div class="price-bar-fill" style="width:${ivPos}%;background:linear-gradient(to right,#dcfce7,#10b981)"></div>
+      <div class="price-bar-needle" style="left:${pricePos}%" title="ราคาปัจจุบัน"></div>
+    </div>
+    <div class="price-zone-label">
+      <span>฿0</span>
+      <span style="color:#10b981">IV MOS15% = ${curr}${fmt(iv15_15)}</span>
+      <span style="color:#2563eb">IV = ${curr}${fmt(iv15_0)}</span>
+      <span>${curr}${fmt(maxBar.toFixed(0))}</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">
+      แถบแสดง IV (Discount 15%) — เส้นดำ = ราคาที่ใช้วิเคราะห์
+    </div>
+  </div>
+
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:440px">
+    <thead>
+      <tr style="background:#f8fafc;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
+        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid var(--border)">Margin of Safety</th>
+        ${rates.map(r => `<th style="padding:8px 12px;text-align:right;border-bottom:2px solid var(--border)">Discount ${rateLbl[r]}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  mosList.forEach(mos => {
+    html += `<tr>
+      <td style="padding:8px 12px;color:var(--muted);font-size:12px;border-bottom:1px solid #f0f4f8">${mosLbl[mos]}</td>`;
+    rates.forEach(r => {
+      const iv = calcIV(s.eps, s.avgPE, s.n, r) * (1 - mos);
+      const bg = s.price <= iv ? 'background:#dcfce7;color:#14532d' :
+                 s.price <= iv * 1.1 ? 'background:#fef9c3;color:#713f12' :
+                 'background:#fee2e2;color:#991b1b';
+      html += `<td style="padding:8px 12px;text-align:right;border-bottom:1px solid #f0f4f8">
+        <span style="${bg};padding:3px 8px;border-radius:4px;font-weight:700">${curr}${fmt(iv)}</span>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${pct(iv, s.price)}</div>
+      </td>`;
+    });
+    html += '</tr>';
+  });
+
+  // ราคาปัจจุบัน + Expected return row
+  const iMOS = calcIMOS15(s.eps, s.avgPE, s.n, s.price);
+  const iCls = iMOS >= 15 ? 'ret-great' : iMOS >= 10 ? 'ret-good' : iMOS >= 5 ? 'ret-ok' : 'ret-low';
+  html += `
+    <tr style="background:#f0f9ff;font-weight:700">
+      <td style="padding:10px 12px;font-size:13px">📋 ราคาที่ใช้วิเคราะห์</td>
+      <td colspan="3" style="padding:10px 12px;text-align:center;font-size:15px">${curr}${fmt(s.price)}</td>
+    </tr>
+    <tr style="background:#fafafa">
+      <td style="padding:8px 12px;font-size:12px;color:var(--muted)">📈 Expected Return (MOS 15%)</td>
+      <td colspan="3" style="padding:8px 12px;text-align:center">
+        <span class="${iCls}" style="font-size:16px">${iMOS.toFixed(1)}% / ปี</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">${iMOS >= 10 ? '✅ น่าดูต่อ' : '⏸ ยังไม่น่าสนใจ'}</span>
+      </td>
+    </tr>
+  </tbody></table></div>`;
+
+  box.innerHTML = html;
 }
+
+
 
 // ============================================================
 // ADD / EDIT FORM
