@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📈 วิเคราะห์หุ้น – Value Investing Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --header: #0f1923;
+  --accent: #2563eb;
+  --accent2: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 10px;
+  --gap: 14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+a{color:var(--accent);text-decoration:none}
+
+/* === HEADER === */
+.app-header{background:var(--header);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.app-title{font-size:20px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-box{padding:7px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:13px;width:200px;outline:none}
+.search-box::placeholder{color:rgba(255,255,255,.5)}
+.search-box:focus{border-color:var(--accent);background:rgba(255,255,255,.15)}
+.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-success{background:var(--accent2);color:#fff}
+.btn-success:hover{background:#059669}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.btn-ghost:hover{background:rgba(255,255,255,.2)}
+
+/* === TABS === */
+.tabs-bar{background:#fff;border-bottom:2px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:4px;overflow-x:auto}
+.tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* === MAIN LAYOUT === */
+.main-container{max-width:1600px;margin:0 auto;padding:var(--gap)}
+
+/* === KPI CARDS === */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.kpi-card{background:var(--card);border-radius:var(--radius);padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid var(--accent)}
+.kpi-card.green{border-left-color:var(--accent2)}
+.kpi-card.warn{border-left-color:var(--warn)}
+.kpi-card.danger{border-left-color:var(--danger)}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.kpi-value{font-size:26px;font-weight:800;color:var(--text)}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* === FILTER ROW === */
+.filter-row{background:var(--card);border-radius:var(--radius);padding:12px 16px;margin-bottom:var(--gap);box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-row label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.filter-select,.filter-input{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:#fff;outline:none}
+.filter-select:focus,.filter-input:focus{border-color:var(--accent)}
+.sort-info{margin-left:auto;font-size:12px;color:var(--muted)}
+
+/* === TABLE === */
+.table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.table-head h3{font-size:14px;font-weight:700}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);background:#fafafa;cursor:pointer;white-space:nowrap;user-select:none}
+.data-table thead th:hover{color:var(--text);background:#f1f5f9}
+.data-table thead th.sorted{color:var(--accent)}
+.data-table tbody td{padding:10px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle;white-space:nowrap}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:#f8fafc;cursor:pointer}
+.data-table tbody tr.selected{background:#eff6ff}
+
+/* === BADGES === */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.badge-yes{background:#dcfce7;color:#166534}
+.badge-no{background:#fee2e2;color:#991b1b}
+.badge-us{background:#dbeafe;color:#1e40af}
+.badge-th{background:#fef3c7;color:#92400e}
+.badge-quality{background:#f3e8ff;color:#6b21a8}
+.badge-growth{background:#e0f2fe;color:#0369a1}
+
+/* === RETURN % COLORING === */
+.ret-great{color:#059669;font-weight:700}
+.ret-good{color:#16a34a;font-weight:600}
+.ret-ok{color:#ca8a04;font-weight:600}
+.ret-low{color:#dc2626;font-weight:600}
+.ret-neg{color:#9f1239;font-weight:600}
+
+/* === PRICE COMPARE === */
+.price-cheap{color:#059669;font-weight:600}
+.price-ok{color:#ca8a04}
+.price-exp{color:#dc2626}
+
+/* === MODAL === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:14px;max-width:1100px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--card);z-index:10}
+.modal-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:4px}
+.modal-close:hover{background:var(--bg);color:var(--text)}
+.modal-body{padding:20px 22px}
+
+/* === DETAIL MODAL === */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+@media(max-width:768px){.detail-grid{grid-template-columns:1fr}}
+.detail-card{background:#f8fafc;border-radius:8px;padding:14px;border:1px solid var(--border)}
+.detail-card h4{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.info-item{display:flex;flex-direction:column;gap:2px}
+.info-label{font-size:11px;color:var(--muted)}
+.info-value{font-size:16px;font-weight:700}
+.tv-container{background:#000;border-radius:8px;overflow:hidden;min-height:360px}
+#tv-chart{width:100%;height:360px}
+
+/* === TARGET PRICE TABLE === */
+.target-table-wrap{overflow-x:auto;margin-top:var(--gap)}
+.target-table{width:100%;border-collapse:collapse;font-size:12px}
+.target-table th,.target-table td{padding:8px 12px;text-align:center;border:1px solid var(--border)}
+.target-table thead th{background:#1e293b;color:#fff;font-weight:700;font-size:11px;text-transform:uppercase}
+.target-table thead th:first-child{text-align:left;background:#0f1923}
+.target-table tbody td:first-child{font-weight:700;background:#f8fafc;text-align:left}
+.target-table tbody tr:hover td{background:#eff6ff}
+.cell-buy{background:#dcfce7!important;color:#14532d;font-weight:700}
+.cell-close{background:#fef9c3!important;color:#713f12;font-weight:600}
+.cell-exp{background:#fee2e2!important;color:#991b1b}
+.current-row td{background:#eff6ff!important;font-weight:700}
+
+/* === PE HISTORY === */
+#pe-chart-container{position:relative;height:220px}
+
+/* === FORM MODAL === */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;border-bottom:1px solid var(--border);padding-bottom:6px;grid-column:1/-1}
+.form-hint{font-size:11px;color:var(--muted);margin-top:2px}
+.pe-year-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;grid-column:1/-1}
+.pe-year-item{display:flex;flex-direction:column;gap:3px}
+.pe-year-item label{font-size:11px;color:var(--muted);font-weight:600}
+.pe-year-item input{padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--border);grid-column:1/-1;margin-top:8px}
+
+/* === MISC === */
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;background:#f1f5f9;font-size:11px;color:var(--muted)}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.text-center{text-align:center}
+.fw700{font-weight:700}
+.scroll-x{overflow-x:auto}
+
+/* === TOAST === */
+#toastContainer{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transform:translateY(12px);transition:all .25s ease;pointer-events:auto;display:flex;align-items:center;gap:8px;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-success{background:#059669}
+.toast-error{background:#dc2626}
+.toast-info{background:#2563eb}
+.toast-warn{background:#d97706}
+
+/* === FETCH BUTTON / LOADING === */
+.btn-fetch{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.btn-fetch:hover{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.btn-fetch:disabled{background:#94a3b8;cursor:not-allowed}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+
+/* === FETCH RESULT BOX === */
+.fetch-result{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;display:none;grid-column:1/-1}
+.fetch-result.error{background:#fef2f2;border-color:#fca5a5}
+.fetch-result.show{display:block}
+
+/* === BULK PROGRESS === */
+.bulk-bar{background:#e2e8f0;border-radius:4px;height:6px;margin-top:6px;overflow:hidden;display:none}
+.bulk-bar-fill{height:100%;background:var(--accent2);border-radius:4px;width:0%;transition:width .3s}
+.bulk-bar.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h2 style="font-size:16px">⚙️ ตั้งค่า API Key</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;font-size:13px;line-height:1.7">
+        <strong>📊 Financial Modeling Prep (FMP) API Key</strong><br>
+        ใช้สำหรับดึง <strong>ข้อมูล P/E ย้อนหลังสูงสุด 10 ปี</strong> ต่อหุ้น<br>
+        <strong>ฟรี 250 requests/วัน</strong> — สมัครได้ที่<br>
+        <a href="https://financialmodelingprep.com/developer/docs" target="_blank" style="color:var(--accent)">
+          financialmodelingprep.com →
+        </a>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">FMP API KEY</label>
+        <input type="text" id="sFmpKey" placeholder="วาง API Key ที่นี่..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;font-family:monospace">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Key จะถูกเก็บใน localStorage ของเบราว์เซอร์ ไม่ได้ส่งออกไปที่ไหน</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:12px;color:#166534">
+        <strong>วิธีใช้:</strong> กรอก API Key แล้วกด "บันทึก" — จากนั้นเมื่อแก้ไขหุ้น กดปุ่ม 🔄 ดึงข้อมูล จะดึง P/E ย้อนหลัง 10 ปีให้อัตโนมัติ
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn" style="background:var(--bg);border:1px solid var(--border)" onclick="closeSettings()">ยกเลิก</button>
+        <button class="btn btn-success" onclick="saveSettings();closeSettings();showToast('บันทึก API Key สำเร็จ','success')">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-title">📈 วิเคราะห์หุ้น</div>
+  <div class="header-right">
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 ค้นหา ticker..." oninput="renderTable()">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <button class="btn btn-fetch btn-sm" id="updateAllBtn" onclick="fetchAllPrices()" title="ดึงราคา+EPS+PE ทุกตัวจาก Yahoo Finance">🔄 Update All</button>
+      <div class="bulk-bar" id="bulkBar"><div class="bulk-bar-fill" id="bulkBarFill"></div></div>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่มหุ้น</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Export JSON">💾 Export</button>
+    <button class="btn btn-ghost btn-sm" id="settingsBtn" onclick="openSettings()" title="ตั้งค่า FMP API Key สำหรับดึงข้อมูล P/E ย้อนหลัง">⚙️ API Key</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab active" onclick="setTab('all',this)">🌍 ทั้งหมด</button>
+  <button class="tab" onclick="setTab('US',this)">🇺🇸 หุ้นสหรัฐ</button>
+  <button class="tab" onclick="setTab('TH',this)">🇹🇭 หุ้นไทย</button>
+  <button class="tab" onclick="setTab('watch',this)">⭐ น่าดูต่อ</button>
+</div>
+
+<!-- MAIN -->
+<div class="main-container">
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- FILTER ROW -->
+  <div class="filter-row">
+    <label>ตลาด:</label>
+    <select class="filter-select" id="filterMarket" onchange="renderTable()">
+      <option value="all">ทั้งหมด</option>
+      <option value="US">🇺🇸 US</option>
+      <option value="TH">🇹🇭 TH</option>
+    </select>
+    <label>กลุ่ม:</label>
+    <select class="filter-select" id="filterGroup" onchange="renderTable()">
+      <option value="all">ทั้งหมด</option>
+      <option value="quality">Quality</option>
+      <option value="growth">Growth</option>
+    </select>
+    <label>น่าดูต่อ:</label>
+    <select class="filter-select" id="filterWatch" onchange="renderTable()">
+      <option value="all">ทั้งหมด</option>
+      <option value="YES">✅ YES</option>
+      <option value="NO">❌ NO</option>
+    </select>
+    <label>Discount Rate:</label>
+    <select class="filter-select" id="filterRate" onchange="renderTable()">
+      <option value="0.15">15%</option>
+      <option value="0.20">20%</option>
+      <option value="0.30">30%</option>
+    </select>
+    <span class="sort-info" id="sortInfo"></span>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <div class="table-head">
+      <h3 id="tableTitle">รายการหุ้นทั้งหมด</h3>
+      <span id="tableCount" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="scroll-x">
+      <table class="data-table" id="stockTable">
+        <thead>
+          <tr>
+            <th onclick="sortBy('ticker')">Ticker ↕</th>
+            <th onclick="sortBy('market')">ตลาด ↕</th>
+            <th onclick="sortBy('price')">ราคา ↕</th>
+            <th onclick="sortBy('avgPE')">P/E เฉลี่ย ↕</th>
+            <th onclick="sortBy('eps')">EPS ↕</th>
+            <th>n (ปี)</th>
+            <th onclick="sortBy('iMOS15')">ผลตอบแทนที่คาด (i%) ↕</th>
+            <th onclick="sortBy('ivNoMos')">IV (No MOS) ↕</th>
+            <th onclick="sortBy('iv15')">IV (MOS 15%) ↕</th>
+            <th onclick="sortBy('iv30')">IV (MOS 30%) ↕</th>
+            <th onclick="sortBy('watch')">น่าดูต่อ ↕</th>
+            <th>การกระทำ</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:1050px">
+    <div class="modal-header">
+      <div class="modal-title" id="detailTitle">—</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm btn-fetch" id="detailFetchBtn" onclick="fetchAndUpdateDetail()">🔄 ดึงข้อมูล</button>
+        <button class="btn btn-sm btn-primary" id="detailEditBtn">✏️ แก้ไข</button>
+        <button class="modal-close" onclick="closeDetail()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <!-- Info + PE Chart -->
+      <div class="detail-grid">
+        <div class="detail-card">
+          <h4>ข้อมูลพื้นฐาน</h4>
+          <div class="info-grid" id="detailInfo"></div>
+        </div>
+        <div class="detail-card">
+          <h4>ประวัติ P/E Ratio</h4>
+          <div id="pe-chart-container"><canvas id="peChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- TradingView -->
+      <div class="detail-card" style="margin-bottom:var(--gap)">
+        <h4>กราฟราคา (TradingView)</h4>
+        <div class="tv-container">
+          <div id="tv-chart"></div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+          ⓘ กราฟโหลดจาก TradingView — ต้องการอินเทอร์เน็ต &nbsp;|&nbsp;
+          <a id="tvLink" href="#" target="_blank">เปิดใน TradingView →</a>
+        </div>
+      </div>
+
+      <!-- Target Price Matrix -->
+      <div class="detail-card">
+        <h4>ตารางราคาเป้าหมาย</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">
+          สูตร: Intrinsic Value = EPS × P/E เฉลี่ย ÷ (1 + discount rate)ⁿ — สีเขียว = ถูกกว่าราคาปัจจุบัน
+        </p>
+        <div class="target-table-wrap" id="targetTableWrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORM MODAL ===== -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title" id="formTitle">+ เพิ่มหุ้นใหม่</div>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" id="stockForm">
+        <div class="form-section-title">ข้อมูลทั่วไป</div>
+        <div class="form-group">
+          <label>Ticker *</label>
+          <input id="fTicker" type="text" placeholder="เช่น AAPL, BDMS" style="text-transform:uppercase">
+        </div>
+        <div class="form-group">
+          <label>ชื่อบริษัท</label>
+          <input id="fName" type="text" placeholder="เช่น Apple Inc.">
+        </div>
+        <div class="form-group">
+          <label>ตลาด *</label>
+          <select id="fMarket">
+            <option value="US">🇺🇸 US (หุ้นสหรัฐ)</option>
+            <option value="TH">🇹🇭 TH (หุ้นไทย)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Exchange</label>
+          <input id="fExchange" type="text" placeholder="เช่น NASDAQ, NYSE, SET">
+        </div>
+        <div class="form-group">
+          <label>กลุ่ม</label>
+          <select id="fGroup">
+            <option value="quality">Quality (หุ้นคุณภาพ)</option>
+            <option value="growth">Growth (หุ้นเติบโต)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>TradingView Symbol</label>
+          <input id="fTvSymbol" type="text" placeholder="เช่น NASDAQ:AAPL หรือ SET:BDMS">
+          <span class="form-hint">เว้นว่างไว้ระบบจะสร้างให้อัตโนมัติ</span>
+        </div>
+
+        <div class="form-section-title">ข้อมูลการวิเคราะห์</div>
+
+        <!-- FETCH BUTTON ROW -->
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 14px;margin-bottom:4px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:#5b21b6">🔄 ดึงข้อมูลจาก Yahoo Finance (แหล่งเดียวกับ TradingView)</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">ดึง ราคา, EPS, P/E ปีปัจจุบัน — ต้องการอินเทอร์เน็ต</div>
+          </div>
+          <button class="btn btn-fetch" id="formFetchBtn" onclick="fetchAndFillForm()">🔄 ดึงข้อมูล</button>
+        </div>
+        <div class="fetch-result" id="fetchResultBox"></div>
+
+        <div class="form-group">
+          <label>ราคาปัจจุบัน *</label>
+          <input id="fPrice" type="number" step="0.01" placeholder="0.00" oninput="calcFormPreview()">
+        </div>
+        <div class="form-group">
+          <label>EPS (กำไรต่อหุ้น) *</label>
+          <input id="fEps" type="number" step="0.01" placeholder="0.00" oninput="calcFormPreview()">
+        </div>
+        <div class="form-group">
+          <label>n (จำนวนปีที่ประเมิน) *</label>
+          <input id="fN" type="number" step="0.5" min="0.5" max="10" placeholder="3.5">
+        </div>
+        <div class="form-group">
+          <label>P/E เฉลี่ย (คำนวณอัตโนมัติหรือใส่เอง)</label>
+          <input id="fAvgPE" type="number" step="0.01" placeholder="คำนวณจากประวัติ P/E">
+        </div>
+
+        <div class="form-section-title">ประวัติ P/E Ratio (ใส่เฉพาะปีที่มีข้อมูล)</div>
+        <div class="pe-year-grid" id="peYearInputs"></div>
+
+        <div class="form-section-title">ผลลัพธ์คำนวณอัตโนมัติ (Preview)</div>
+        <div class="detail-card" style="grid-column:1/-1;background:#f0fdf4;border-color:#86efac">
+          <div id="formCalcPreview" style="font-size:13px;color:var(--muted)">กรอกข้อมูลเพื่อดู preview...</div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" onclick="closeForm()">ยกเลิก</button>
+          <button class="btn btn-danger btn-sm" id="fDeleteBtn" onclick="deleteCurrentStock()" style="display:none">🗑 ลบ</button>
+          <button class="btn btn-success" onclick="saveForm()">💾 บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STOCK DATA
+// ============================================================
+const YEARS = [2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+
+const DEFAULT_STOCKS = [
+  // ===== US QUALITY =====
+  {ticker:'AAPL',name:'Apple Inc.',market:'US',exchange:'NASDAQ',group:'quality',price:248.80,eps:11.7,n:3.5,avgPE:27.07,
+   pe:{2017:16.73,2018:18.95,2019:18.41,2020:34.28,2021:26.17,2022:24.61,2023:27.91,2024:37.44,2025:34.22,2026:32.00}},
+  {ticker:'ADBE',name:'Adobe Inc.',market:'US',exchange:'NASDAQ',group:'quality',price:234.84,eps:30.88,n:3.5,avgPE:41.90,
+   pe:{2017:53.11,2018:48.25,2019:51.55,2020:44.03,2021:61.50,2022:33.82,2023:51.79,2024:41.73,2025:19.17,2026:14.03}},
+  {ticker:'BAC',name:'Bank of America',market:'US',exchange:'NYSE',group:'quality',price:46.97,eps:6.82,n:3.5,avgPE:13.33,
+   pe:{2016:14.85,2017:18.94,2018:9.45,2019:12.79,2020:16.19,2021:12.46,2022:10.40,2023:10.94,2024:13.69,2025:14.34,2026:12.62}},
+  {ticker:'CROX',name:'Crocs Inc.',market:'US',exchange:'NASDAQ',group:'quality',price:80.86,eps:14.83,n:3.5,avgPE:12.80,
+   pe:{2019:25.16,2020:13.73,2021:11.26,2022:12.45,2023:7.30,2024:6.90}},
+  {ticker:'GOOGL',name:'Alphabet Inc.',market:'US',exchange:'NASDAQ',group:'quality',price:274.23,eps:18.55,n:3.5,avgPE:25.42,
+   pe:{2018:23.91,2019:27.24,2020:29.90,2021:25.82,2022:19.36,2023:24.08,2024:23.53,2025:28.96,2026:26.00}},
+  {ticker:'JNJ',name:'Johnson & Johnson',market:'US',exchange:'NYSE',group:'quality',price:240.45,eps:15.06,n:3.5,avgPE:23.86,
+   pe:{2016:19.43,2018:22.69,2019:25.88,2020:28.57,2021:21.91,2022:26.23,2023:28.32,2024:25.05,2025:18.82,2026:21.66}},
+  {ticker:'KHC',name:'Kraft Heinz Co.',market:'US',exchange:'NASDAQ',group:'quality',price:24.70,eps:2.73,n:3,avgPE:17.52,
+   pe:{2017:8.73,2019:20.00,2021:43.05,2022:21.28,2023:16.00,2024:13.58,2025:0.00}},
+  {ticker:'KO',name:'Coca-Cola Co.',market:'US',exchange:'NYSE',group:'quality',price:68.60,eps:3.7,n:3,avgPE:27.01,
+   pe:{2018:31.64,2019:26.77,2020:30.60,2021:26.30,2022:29.00,2023:23.87,2024:25.30,2025:22.63}},
+  {ticker:'MA',name:'Mastercard Inc.',market:'US',exchange:'NYSE',group:'quality',price:484.24,eps:29.7,n:3.5,avgPE:38.26,
+   pe:{2017:41.45,2018:33.71,2019:37.59,2020:56.01,2021:41.03,2022:34.00,2023:36.04,2024:37.92,2025:34.55,2026:30.31}},
+  {ticker:'MMM',name:'3M Company',market:'US',exchange:'NYSE',group:'quality',price:143.04,eps:11.43,n:3.5,avgPE:21.10,
+   pe:{2016:21.88,2017:29.68,2018:21.43,2019:22.59,2020:18.68,2021:17.56,2022:11.78,2024:17.09,2025:26.31,2026:24.02}},
+  {ticker:'MSFT',name:'Microsoft Corp.',market:'US',exchange:'NASDAQ',group:'quality',price:479.46,eps:26.4,n:4,avgPE:33.39,
+   pe:{2017:21.21,2018:46.3,2019:26.47,2020:35.31,2021:33.64,2022:26.62,2023:35.16,2024:37.88,2025:36.46,2026:34.86}},
+  {ticker:'NKE',name:'Nike Inc.',market:'US',exchange:'NYSE',group:'quality',price:51.37,eps:2.85,n:2.5,avgPE:30.21,
+   pe:{2016:21.11,2018:30.99,2020:38.35,2021:31.66,2022:32.59,2023:25.51,2024:28,2025:33.49}},
+  {ticker:'PG',name:'Procter & Gamble',market:'US',exchange:'NYSE',group:'quality',price:146.37,eps:8.18,n:4,avgPE:24.16,
+   pe:{2017:23.9,2018:21.27,2020:24.1,2021:24.53,2022:24.77,2023:25.72,2024:27.4,2025:24.48,2026:21.29}},
+  {ticker:'TSLA',name:'Tesla Inc.',market:'US',exchange:'NASDAQ',group:'quality',price:361.83,eps:8.21,n:3.5,avgPE:96.63,
+   pe:{2022:34.02,2023:57.73,2024:198.13}},
+  {ticker:'V',name:'Visa Inc.',market:'US',exchange:'NYSE',group:'quality',price:295.52,eps:18.72,n:3.5,avgPE:33.63,
+   pe:{2017:38.97,2018:35.16,2019:33.55,2020:42.44,2021:40.59,2022:25.94,2023:28.23,2024:28.67,2025:33.81,2026:28.95}},
+  // ===== US GROWTH =====
+  {ticker:'AMD',name:'Advanced Micro Devices',market:'US',exchange:'NASDAQ',group:'growth',price:215.70,eps:13.76,n:4,avgPE:77.10,
+   pe:{2018:55.69,2020:44.49,2021:56.8,2022:77.09,2025:122.15,2026:106.38}},
+  {ticker:'BRK.B',name:'Berkshire Hathaway B',market:'US',exchange:'NYSE',group:'growth',price:506.00,eps:22.28,n:2,avgPE:11.28,
+   pe:{2016:16.69,2017:10.88,2019:6.82,2020:13.04,2021:7.54,2023:8.06,2024:10.98,2025:16.2}},
+  {ticker:'CRWD',name:'CrowdStrike Holdings',market:'US',exchange:'NASDAQ',group:'growth',price:513.80,eps:7.4,n:4,avgPE:797.87,
+   pe:{2023:797.87}},
+  {ticker:'WM',name:'Waste Management Inc.',market:'US',exchange:'NYSE',group:'growth',price:216.48,eps:10.21,n:3,avgPE:29.50,
+   pe:{2017:19.57,2018:20,2019:29.17,2020:33.51,2021:38.87,2022:29.09,2023:31.63,2024:29.64,2025:34.04}},
+  {ticker:'JPM',name:'JPMorgan Chase',market:'US',exchange:'NYSE',group:'growth',price:309.28,eps:22.95,n:2,avgPE:12.71,
+   pe:{2017:16.95,2018:10.85,2019:13,2020:14.31,2021:10.31,2022:11.1,2023:10.48,2024:12.14,2025:15.25}},
+  {ticker:'NVDA',name:'NVIDIA Corp.',market:'US',exchange:'NASDAQ',group:'growth',price:181.05,eps:9.45,n:3,avgPE:47.71,
+   pe:{2017:50.48,2018:24.16,2019:55.36,2021:59.37,2023:51.14,2024:48.54,2025:44.94}},
+  {ticker:'ONON',name:'On Holding AG',market:'US',exchange:'NYSE',group:'growth',price:46.97,eps:2.88,n:3,avgPE:77.54,
+   pe:{2022:90,2023:98,2024:65.31,2025:56.86}},
+  {ticker:'PEP',name:'PepsiCo Inc.',market:'US',exchange:'NASDAQ',group:'growth',price:149.46,eps:9.38,n:3,avgPE:25.31,
+   pe:{2018:12.57,2019:26.46,2020:28.36,2021:30.96,2022:28.12,2023:25.89,2024:21.83,2025:28.27}},
+  {ticker:'RSG',name:'Republic Services',market:'US',exchange:'NYSE',group:'growth',price:214.68,eps:9.16,n:3,avgPE:28.40,
+   pe:{2016:32.05,2017:17.93,2018:22.81,2019:26.89,2020:31.85,2021:34.52,2023:27.49,2024:31,2025:31.06}},
+  {ticker:'TSM',name:'Taiwan Semiconductor',market:'US',exchange:'NYSE',group:'growth',price:293.60,eps:17.65,n:3,avgPE:23.60,
+   pe:{2017:18.23,2018:16.44,2019:26.98,2020:32.15,2021:29.21,2022:11.33,2023:20.05,2024:28.03,2025:29.94}},
+  {ticker:'ULTA',name:'Ulta Beauty Inc.',market:'US',exchange:'NASDAQ',group:'growth',price:549.49,eps:33.57,n:3,avgPE:21.36,
+   pe:{2017:24.49,2018:26.63,2019:22.05,2021:19.96,2022:21.06,2023:19.41,2024:16.27,2025:21.01}},
+  {ticker:'NVO',name:'Novo Nordisk A/S',market:'US',exchange:'NYSE',group:'growth',price:36.04,eps:3.98,n:3.5,avgPE:25.71,
+   pe:{2017:23,2018:18.27,2019:23.58,2020:25.36,2021:33.98,2022:39.21,2023:38.3,2024:26.21,2025:14.61,2026:14.61}},
+  {ticker:'AMPH',name:'Amphastar Pharma',market:'US',exchange:'NASDAQ',group:'growth',price:27.25,eps:3.84,n:3,avgPE:16.57,
+   pe:{2019:19.67,2021:18.67,2022:16.07,2023:23.83,2024:12.12,2025:9.08}},
+  {ticker:'INTU',name:'Intuit Inc.',market:'US',exchange:'NASDAQ',group:'growth',price:676.01,eps:34.46,n:4,avgPE:49.75,
+   pe:{2016:36.49,2017:36.88,2018:40.11,2019:47.02,2020:44.29,2022:62.71,2023:60.74,2024:62.05,2025:57.43}},
+  {ticker:'NFLX',name:'Netflix Inc.',market:'US',exchange:'NASDAQ',group:'growth',price:88.95,eps:4.47,n:3,avgPE:62.25,
+   pe:{2018:99.87,2019:78.31,2020:88.94,2021:53.62,2022:29.62,2023:40.47,2024:44.94}},
+  // ===== TH QUALITY =====
+  {ticker:'AOT',name:'Airports of Thailand',market:'TH',exchange:'SET',group:'quality',price:40,eps:1.15,n:2,avgPE:39.91,
+   pe:{2017:40.75,2018:37.17,2019:42.67,2024:47.66,2025:31.3}},
+  {ticker:'BDMS',name:'Bangkok Dusit Med Svc',market:'TH',exchange:'SET',group:'quality',price:19,eps:1.18,n:2,avgPE:33.84,
+   pe:{2017:31.69,2018:42.01,2019:26.38,2020:45.82,2021:46.06,2022:36.56,2023:30.71,2024:24.35,2025:21.01}},
+  {ticker:'CENTEL',name:'Central Plaza Hotel',market:'TH',exchange:'SET',group:'quality',price:32,eps:1.75,n:2,avgPE:30.59,
+   pe:{2017:39.49,2018:24.8,2019:19.35,2023:47.32,2024:26.57,2025:25.99}},
+  {ticker:'COM7',name:'COM7 PCL',market:'TH',exchange:'SET',group:'quality',price:21.5,eps:2.75,n:2,avgPE:25.46,
+   pe:{2017:32.12,2018:20.87,2019:26.14,2020:31.4,2021:37.29,2022:26.86,2023:19.99,2024:18.83,2025:15.6}},
+  {ticker:'CPALL',name:'CP All PCL',market:'TH',exchange:'SET',group:'quality',price:45.75,eps:3.89,n:3,avgPE:32.10,
+   pe:{2017:35.98,2018:30.99,2019:30.41,2020:34.65,2021:44.22,2022:49.08,2023:27.91,2024:20.12,2025:15.57}},
+  {ticker:'HMPRO',name:'Home Product Center',market:'TH',exchange:'SET',group:'quality',price:6.5,eps:0.53,n:3,avgPE:29.30,
+   pe:{2017:34.59,2018:35.61,2019:34.06,2020:34.95,2021:35.05,2022:32.79,2023:23.89,2024:19.01,2025:13.77}},
+  {ticker:'MINT',name:'Minor International',market:'TH',exchange:'SET',group:'quality',price:22.2,eps:1.95,n:2,avgPE:29.36,
+   pe:{2017:35.88,2018:30,2019:17.67,2023:45.12,2024:24.52,2025:22.99}},
+  {ticker:'TIDLOR',name:'Ngern Tid Lor PCL',market:'TH',exchange:'SET',group:'quality',price:21.3,eps:2.19,n:2,avgPE:15.22,
+   pe:{2022:19.69,2023:16.03,2024:11.55,2025:13.62}},
+  {ticker:'TISCO',name:'TISCO Financial Group',market:'TH',exchange:'SET',group:'quality',price:108,eps:8.49,n:2,avgPE:11.19,
+   pe:{2017:11.64,2018:8.93,2019:10.93,2020:11.69,2021:11.33,2022:11,2023:10.94,2024:11.43,2025:12.84}},
+  {ticker:'MEGA',name:'Mega Lifesciences',market:'TH',exchange:'SET',group:'quality',price:29.5,eps:2.82,n:2,avgPE:20.46,
+   pe:{2017:34.38,2018:20.72,2019:19.89,2020:22.38,2021:22.62,2022:18.18,2023:17.61,2024:14.41,2025:13.92}},
+  {ticker:'WHA',name:'WHA Corporation',market:'TH',exchange:'SET',group:'quality',price:3.1,eps:0.32,n:2,avgPE:18.44,
+   pe:{2017:17.54,2018:21.39,2019:17.7,2020:18,2021:29.31,2022:15.07,2023:17.9,2024:18.85,2025:10.17}},
+  // ===== TH GROWTH =====
+  {ticker:'BAFS',name:'Bangkok Aviation Fuel',market:'TH',exchange:'SET',group:'growth',price:8.3,eps:0.3,n:1.5,avgPE:25.60,
+   pe:{2017:30.76,2018:19.87,2019:20.35,2025:31.42}},
+  {ticker:'ADVANC',name:'Advanced Info Service',market:'TH',exchange:'SET',group:'growth',price:294,eps:18.9,n:3.5,avgPE:21.46,
+   pe:{2017:18.88,2018:17.28,2019:20.3,2020:19.08,2021:25.41,2022:22.3,2023:22.19,2024:24.33,2025:23.34}},
+  {ticker:'AMATA',name:'Amata Corporation',market:'TH',exchange:'SET',group:'growth',price:15.1,eps:2.68,n:2.5,avgPE:14.90,
+   pe:{2017:19.68,2018:21.59,2019:12.31,2020:16.99,2021:17.22,2022:10.46,2023:16.32,2024:13.32,2025:6.22}},
+  {ticker:'BCH',name:'Bangkok Chain Hospital',market:'TH',exchange:'SET',group:'growth',price:13.5,eps:0.84,n:3.5,avgPE:28.65,
+   pe:{2017:44.06,2019:37.57,2020:27.59,2021:7.32,2022:16.82,2023:39.72,2024:29.75,2025:26.4}},
+  {ticker:'BH',name:'Bumrungrad Hospital',market:'TH',exchange:'SET',group:'growth',price:145,eps:9.43,n:2.5,avgPE:31.24,
+   pe:{2017:41.54,2018:39.17,2019:34.02,2022:37.24,2023:27.48,2024:22.26,2025:16.95}},
+  {ticker:'ITC',name:'ITC (Thai) PCL',market:'TH',exchange:'SET',group:'growth',price:17.2,eps:1.19,n:2.5,avgPE:19.28,
+   pe:{2022:19.9,2023:27.74,2024:18.6,2025:10.86}},
+  {ticker:'JMART',name:'Jay Mart PCL',market:'TH',exchange:'SET',group:'growth',price:7.55,eps:0.82,n:1.5,avgPE:21.57,
+   pe:{2017:26.96,2019:14.18,2020:23.42,2021:25.75,2022:33.3,2024:16.88,2025:10.48}},
+  {ticker:'KBANK',name:'Kasikornbank',market:'TH',exchange:'SET',group:'growth',price:160,eps:25.4,n:3.5,avgPE:9.72,
+   pe:{2017:16.17,2018:11.51,2019:9.33,2020:9.1,2021:8.84,2022:9.77,2023:7.54,2024:7.58,2025:7.65}},
+  {ticker:'KKP',name:'Kiatnakin Phatra Bank',market:'TH',exchange:'SET',group:'growth',price:48,eps:6.57,n:2.5,avgPE:8.94,
+   pe:{2017:11.7,2018:9.28,2019:9.33,2020:8.55,2021:8.01,2022:8.21,2023:7.82,2024:8.79,2025:8.79}},
+  {ticker:'SAWAD',name:'Srisawad Corporation',market:'TH',exchange:'SET',group:'growth',price:26.5,eps:3.58,n:2,avgPE:17.17,
+   pe:{2017:26.61,2018:18.66,2019:24.05,2020:19.8,2021:17.96,2022:14.96,2023:11.12,2024:12.48,2025:8.87}},
+  {ticker:'SCB',name:'SCB X PCL',market:'TH',exchange:'SET',group:'growth',price:129,eps:14.19,n:2,avgPE:10.23,
+   pe:{2017:11.81,2018:11.33,2019:10.26,2020:10.93,2021:12.13,2022:9.62,2023:8.2,2024:9,2025:8.8}},
+  {ticker:'ICHI',name:'Ichitan Group PCL',market:'TH',exchange:'SET',group:'growth',price:12.6,eps:1.11,n:2,avgPE:18.95,
+   pe:{2019:16.11,2020:23.32,2021:23.78,2022:22.89,2023:18.55,2024:14.63,2025:13.35}},
+  {ticker:'PTG',name:'PTG Energy PCL',market:'TH',exchange:'SET',group:'growth',price:8.7,eps:1.35,n:2.5,avgPE:19.93,
+   pe:{2018:39.64,2019:22.99,2020:17.23,2021:14.02,2022:25.06,2023:15.48,2024:13.4,2025:11.61}}
+];
+
+// ============================================================
+// CALCULATIONS
+// ============================================================
+function calcIV(eps, avgPE, n, rate) {
+  // Intrinsic Value (No MOS) = EPS × avgPE / (1+rate)^n
+  return (eps * avgPE) / Math.pow(1 + rate, n);
+}
+function calcIMOS15(eps, avgPE, n, price) {
+  // Expected return = (EPS × avgPE × 0.85 / price)^(1/n) - 1
+  const val = (eps * avgPE * 0.85) / price;
+  return (Math.pow(val, 1/n) - 1) * 100;
+}
+function calcWatch(iMOS15) {
+  return iMOS15 >= 10;
+}
+function enrichStock(s) {
+  const rate = 0.15;
+  const iv = calcIV(s.eps, s.avgPE, s.n, rate);
+  const iMOS15 = calcIMOS15(s.eps, s.avgPE, s.n, s.price);
+  const watch = calcWatch(iMOS15);
+  const tvSymbol = s.tvSymbol || (s.market === 'TH' ? `SET:${s.ticker}` : `${s.exchange}:${s.ticker}`);
+  return {...s, iv, iMOS15, watch, tvSymbol,
+    ivNoMos: iv,
+    iv15: iv * 0.85,
+    iv30: iv * 0.70
+  };
+}
+function getTargetMatrix(eps, avgPE, n) {
+  const rates = [0.15, 0.20, 0.30];
+  const mosList = [0, 0.15, 0.30, 0.40, 0.50];
+  const matrix = {};
+  mosList.forEach(mos => {
+    matrix[mos] = {};
+    rates.forEach(r => {
+      const iv = calcIV(eps, avgPE, n, r);
+      matrix[mos][r] = iv * (1 - mos);
+    });
+  });
+  return matrix;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let stocks = [];
+let activeTab = 'all';
+let sortField = 'iMOS15';
+let sortDir = -1; // -1 = desc
+let peChartInst = null;
+let selectedTicker = null;
+let tvWidget = null;
+let editingTicker = null;
+
+function loadStocks() {
+  try {
+    const saved = localStorage.getItem('stockData');
+    if (saved) {
+      stocks = JSON.parse(saved);
+    } else {
+      stocks = DEFAULT_STOCKS.map(s => ({...s}));
+      saveStocks();
+    }
+  } catch(e) {
+    stocks = DEFAULT_STOCKS.map(s => ({...s}));
+  }
+}
+function saveStocks() {
+  localStorage.setItem('stockData', JSON.stringify(stocks));
+}
+function getEnriched() {
+  return stocks.map(enrichStock);
+}
+
+// ============================================================
+// FILTERING & SORTING
+// ============================================================
+function getFiltered() {
+  const all = getEnriched();
+  const market = document.getElementById('filterMarket').value;
+  const group = document.getElementById('filterGroup').value;
+  const watchF = document.getElementById('filterWatch').value;
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  let list = all;
+  if (activeTab === 'US') list = list.filter(s => s.market === 'US');
+  else if (activeTab === 'TH') list = list.filter(s => s.market === 'TH');
+  else if (activeTab === 'watch') list = list.filter(s => s.watch);
+  if (market !== 'all') list = list.filter(s => s.market === market);
+  if (group !== 'all') list = list.filter(s => s.group === group);
+  if (watchF === 'YES') list = list.filter(s => s.watch);
+  else if (watchF === 'NO') list = list.filter(s => !s.watch);
+  if (search) list = list.filter(s => s.ticker.toLowerCase().includes(search) || (s.name||'').toLowerCase().includes(search));
+  // sort
+  list.sort((a,b) => {
+    let av = a[sortField], bv = b[sortField];
+    if (typeof av === 'string') av = av.toLowerCase(), bv = (bv||'').toLowerCase();
+    if (av < bv) return -1 * sortDir;
+    if (av > bv) return 1 * sortDir;
+    return 0;
+  });
+  return list;
+}
+function sortBy(field) {
+  if (sortField === field) sortDir *= -1;
+  else { sortField = field; sortDir = -1; }
+  renderTable();
+}
+
+// ============================================================
+// RENDER KPIs
+// ============================================================
+function renderKPIs() {
+  const all = getEnriched();
+  const watchYes = all.filter(s=>s.watch).length;
+  const us = all.filter(s=>s.market==='US').length;
+  const th = all.filter(s=>s.market==='TH').length;
+  const great = all.filter(s=>s.iMOS15>=20).length;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">หุ้นทั้งหมด</div><div class="kpi-value">${all.length}</div><div class="kpi-sub">🇺🇸 ${us}  🇹🇭 ${th}</div></div>
+    <div class="kpi-card green"><div class="kpi-label">น่าดูต่อ (i ≥ 10%)</div><div class="kpi-value">${watchYes}</div><div class="kpi-sub">${((watchYes/all.length)*100).toFixed(0)}% ของทั้งหมด</div></div>
+    <div class="kpi-card warn"><div class="kpi-label">ผลตอบแทนสูง (i ≥ 20%)</div><div class="kpi-value">${great}</div><div class="kpi-sub">โอกาสดี</div></div>
+    <div class="kpi-card danger"><div class="kpi-label">ราคาสูงกว่า IV@15%</div><div class="kpi-value">${all.filter(s=>s.price>s.ivNoMos).length}</div><div class="kpi-sub">ราคาแพงกว่ามูลค่า</div></div>
+  `;
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
+function renderTable() {
+  renderKPIs();
+  const rate = parseFloat(document.getElementById('filterRate').value);
+  const list = getFiltered();
+  const titles = {all:'รายการหุ้นทั้งหมด',US:'หุ้นสหรัฐ 🇺🇸',TH:'หุ้นไทย 🇹🇭',watch:'น่าดูต่อ ⭐'};
+  document.getElementById('tableTitle').textContent = titles[activeTab]||'รายการหุ้น';
+  document.getElementById('tableCount').textContent = `${list.length} รายการ`;
+  document.getElementById('sortInfo').textContent = `เรียงตาม: ${sortField} ${sortDir===-1?'↓':'↑'}`;
+  const rateLabel = (rate*100)+'%';
+  const tbody = document.getElementById('tableBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="icon">🔍</div><div>ไม่พบหุ้นตามเงื่อนไขที่กำหนด</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(s => {
+    const iv = calcIV(s.eps, s.avgPE, s.n, rate);
+    const iv15 = iv * 0.85;
+    const iv30 = iv * 0.70;
+    const iRet = s.iMOS15;
+    const retClass = iRet >= 30 ? 'ret-great' : iRet >= 20 ? 'ret-good' : iRet >= 10 ? 'ret-ok' : iRet >= 0 ? 'ret-low' : 'ret-neg';
+    const priceClass = s.price <= iv30 ? 'price-cheap' : s.price <= iv15 ? 'price-ok' : 'price-exp';
+    const mktBadge = s.market === 'US' ? '<span class="badge badge-us">US</span>' : '<span class="badge badge-th">TH</span>';
+    const watchBadge = s.watch ? '<span class="badge badge-yes">✅ YES</span>' : '<span class="badge badge-no">❌ NO</span>';
+    const curr = s.market === 'US' ? '$' : '฿';
+    const fmt = v => v >= 1000 ? v.toFixed(0) : v.toFixed(2);
+    return `<tr onclick="openDetail('${s.ticker}')" class="${selectedTicker===s.ticker?'selected':''}">
+      <td><strong>${s.ticker}</strong><br><span style="font-size:11px;color:var(--muted)">${s.name||''}</span></td>
+      <td>${mktBadge}<br><span class="badge ${s.group==='quality'?'badge-quality':'badge-growth'}" style="margin-top:3px">${s.group}</span></td>
+      <td class="${priceClass}">${curr}${fmt(s.price)}</td>
+      <td>${s.avgPE.toFixed(2)}x</td>
+      <td>${curr}${fmt(s.eps)}</td>
+      <td>${s.n}y</td>
+      <td class="${retClass}">${iRet.toFixed(2)}%</td>
+      <td>${curr}${fmt(iv)}</td>
+      <td>${curr}${fmt(iv15)}</td>
+      <td>${curr}${fmt(iv30)}</td>
+      <td>${watchBadge}</td>
+      <td>
+        <button class="btn btn-sm" style="background:var(--accent);color:#fff;margin-right:4px" onclick="event.stopPropagation();openDetail('${s.ticker}')">📊</button>
+        <button class="btn btn-sm" style="background:#f1f5f9;color:var(--text)" onclick="event.stopPropagation();openEditModal('${s.ticker}')">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function setTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // sync filter dropdowns
+  if (tab === 'US') document.getElementById('filterMarket').value = 'US';
+  else if (tab === 'TH') document.getElementById('filterMarket').value = 'TH';
+  else document.getElementById('filterMarket').value = 'all';
+  if (tab === 'watch') document.getElementById('filterWatch').value = 'YES';
+  else if (document.getElementById('filterWatch').value === 'YES' && tab !== 'watch')
+    document.getElementById('filterWatch').value = 'all';
+  renderTable();
+}
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
+function openDetail(ticker) {
+  selectedTicker = ticker;
+  const all = getEnriched();
+  const s = all.find(x => x.ticker === ticker);
+  if (!s) return;
+  // highlight row
+  document.querySelectorAll('#tableBody tr').forEach(r => r.classList.remove('selected'));
+  const row = [...document.querySelectorAll('#tableBody tr')].find(r => r.onclick && r.getAttribute('onclick')?.includes(ticker));
+  if (row) row.classList.add('selected');
+  document.getElementById('detailModal').classList.add('open');
+  const curr = s.market === 'US' ? '$' : '฿';
+  const iRet = s.iMOS15;
+  const retClass = iRet >= 30 ? 'ret-great' : iRet >= 20 ? 'ret-good' : iRet >= 10 ? 'ret-ok' : iRet >= 0 ? 'ret-low' : 'ret-neg';
+  const iv = calcIV(s.eps, s.avgPE, s.n, 0.15);
+  document.getElementById('detailTitle').innerHTML = `
+    <span>${s.ticker}</span>
+    <span class="badge ${s.market==='US'?'badge-us':'badge-th'}">${s.market}</span>
+    <span style="font-size:14px;font-weight:400;color:var(--muted)">${s.name||''}</span>
+  `;
+  document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openEditModal(ticker); };
+  document.getElementById('detailInfo').innerHTML = `
+    <div class="info-item"><span class="info-label">ราคาปัจจุบัน</span><span class="info-value">${curr}${s.price.toFixed(2)}</span></div>
+    <div class="info-item"><span class="info-label">P/E เฉลี่ย</span><span class="info-value">${s.avgPE.toFixed(2)}x</span></div>
+    <div class="info-item"><span class="info-label">EPS</span><span class="info-value">${curr}${s.eps.toFixed(2)}</span></div>
+    <div class="info-item"><span class="info-label">n (ปีประเมิน)</span><span class="info-value">${s.n} ปี</span></div>
+    <div class="info-item"><span class="info-label">ผลตอบแทนที่คาด (i%)</span><span class="info-value ${retClass}">${iRet.toFixed(2)}%</span></div>
+    <div class="info-item"><span class="info-label">IV (No MOS @15%)</span><span class="info-value">${curr}${iv.toFixed(2)}</span></div>
+    <div class="info-item"><span class="info-label">น่าดูต่อ</span><span class="info-value">${s.watch?'✅ YES':'❌ NO'}</span></div>
+    <div class="info-item"><span class="info-label">Exchange</span><span class="info-value">${s.exchange}</span></div>
+  `;
+  // P/E Chart
+  renderPEChart(s);
+  // Target matrix
+  renderTargetTable(s);
+  // TradingView
+  loadTVChart(s.tvSymbol, ticker);
+  // TV Link
+  const tvUrl = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(s.tvSymbol)}`;
+  document.getElementById('tvLink').href = tvUrl;
+  document.getElementById('tvLink').textContent = `เปิด ${s.tvSymbol} ใน TradingView →`;
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('open');
+  selectedTicker = null;
+}
+
+// ============================================================
+// PE CHART
+// ============================================================
+function renderPEChart(s) {
+  if (peChartInst) { peChartInst.destroy(); peChartInst = null; }
+  const years = Object.keys(s.pe).map(Number).sort();
+  const values = years.map(y => s.pe[y]);
+  const avgLine = years.map(() => s.avgPE);
+  const ctx = document.getElementById('peChart').getContext('2d');
+  peChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: years,
+      datasets: [
+        {label:'P/E', data:values, backgroundColor:'rgba(37,99,235,0.7)', borderColor:'rgba(37,99,235,1)', borderWidth:1, borderRadius:3},
+        {label:`P/E เฉลี่ย (${s.avgPE.toFixed(2)}x)`, data:avgLine, type:'line', borderColor:'#ef4444', borderWidth:2, borderDash:[4,4], pointRadius:0, fill:false}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:11},padding:10}},tooltip:{mode:'index'}},
+      scales:{x:{grid:{display:false}},y:{beginAtZero:false,ticks:{callback:v=>v+'x'}}}
+    }
+  });
+}
+
+// ============================================================
+// TARGET PRICE TABLE
+// ============================================================
+function renderTargetTable(s) {
+  const matrix = getTargetMatrix(s.eps, s.avgPE, s.n);
+  const rates = [0.15, 0.20, 0.30];
+  const mosList = [0, 0.15, 0.30, 0.40, 0.50];
+  const curr = s.market === 'US' ? '$' : '฿';
+  const fmt = v => v >= 1000 ? v.toFixed(0) : v.toFixed(2);
+  function cellClass(val) {
+    if (s.price <= val * 0.7) return 'cell-buy';
+    if (s.price <= val) return 'cell-buy';
+    if (s.price <= val * 1.15) return 'cell-close';
+    return 'cell-exp';
+  }
+  let html = `<table class="target-table">
+    <thead>
+      <tr>
+        <th>Margin of Safety</th>
+        <th>Discount 15%</th>
+        <th>Discount 20%</th>
+        <th>Discount 30%</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  mosList.forEach(mos => {
+    const label = mos === 0 ? 'No MOS' : `MOS ${(mos*100).toFixed(0)}%`;
+    html += `<tr>
+      <td>${label}</td>
+      ${rates.map(r => {
+        const val = matrix[mos][r];
+        const cls = s.price <= val ? 'cell-buy' : s.price <= val * 1.1 ? 'cell-close' : 'cell-exp';
+        return `<td class="${cls}">${curr}${fmt(val)}</td>`;
+      }).join('')}
+    </tr>`;
+  });
+  html += `<tr class="current-row">
+    <td><strong>⭐ ราคาปัจจุบัน</strong></td>
+    <td colspan="3" style="text-align:center;font-size:16px">${curr}${fmt(s.price)}</td>
+  </tr>`;
+  html += `</tbody></table>
+  <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+    <span style="background:#dcfce7;color:#14532d;padding:2px 6px;border-radius:3px;margin-right:6px">🟢 ราคา ≤ IV</span>
+    <span style="background:#fef9c3;color:#713f12;padding:2px 6px;border-radius:3px;margin-right:6px">🟡 ราคาใกล้ IV</span>
+    <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:3px">🔴 ราคา > IV</span>
+  </div>`;
+  document.getElementById('targetTableWrap').innerHTML = html;
+}
+
+// ============================================================
+// TRADINGVIEW CHART
+// ============================================================
+function loadTVChart(tvSymbol, ticker) {
+  const container = document.getElementById('tv-chart');
+  container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:360px;color:#888;flex-direction:column;gap:10px">
+    <div style="font-size:32px">📊</div>
+    <div>กำลังโหลด TradingView Chart สำหรับ ${tvSymbol}...</div>
+    <div style="font-size:12px;opacity:.6">ต้องการการเชื่อมต่ออินเทอร์เน็ต</div>
+  </div>`;
+  // Clear old widget
+  if (window.__tvWidgetContainer) {
+    window.__tvWidgetContainer.innerHTML = '';
+  }
+  const uniqueId = 'tvw_' + Math.random().toString(36).slice(2);
+  container.innerHTML = `<div id="${uniqueId}" style="width:100%;height:360px"></div>`;
+  window.__tvWidgetContainer = container;
+  function createWidget() {
+    try {
+      if (window.TradingView && window.TradingView.widget) {
+        new window.TradingView.widget({
+          container_id: uniqueId,
+          width: '100%',
+          height: 360,
+          symbol: tvSymbol,
+          interval: 'W',
+          theme: 'light',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#f1f3f6',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          hide_top_toolbar: false,
+          save_image: false,
+          studies: [],
+        });
+      } else {
+        // Fallback: show iframe with mini chart
+        container.innerHTML = `<iframe
+          src="https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSymbol)}&interval=W&theme=light&style=1&locale=en&utm_source=www&utm_medium=widget"
+          width="100%" height="360" frameborder="0" allowtransparency="true"
+          style="border-radius:6px">
+        </iframe>`;
+      }
+    } catch(e) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">
+        ไม่สามารถโหลด TradingView ได้ —
+        <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}" target="_blank" style="color:var(--accent)">เปิดในแท็บใหม่ →</a>
+      </div>`;
+    }
+  }
+  if (!document.getElementById('tvScript')) {
+    const script = document.createElement('script');
+    script.id = 'tvScript';
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.onload = createWidget;
+    script.onerror = () => {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">
+        ไม่สามารถโหลด TradingView ได้ — ลองเปิดใน
+        <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}" target="_blank" style="color:var(--accent)">TradingView →</a>
+      </div>`;
+    };
+    document.head.appendChild(script);
+  } else {
+    setTimeout(createWidget, 100);
+  }
+}
+
+// ============================================================
+// ADD / EDIT FORM
+// ============================================================
+function buildPEYearInputs() {
+  const container = document.getElementById('peYearInputs');
+  container.innerHTML = YEARS.map(y => `
+    <div class="pe-year-item">
+      <label>${y}</label>
+      <input type="number" step="0.01" id="pe_${y}" placeholder="—" oninput="calcFormPreview()">
+    </div>
+  `).join('');
+}
+
+function openAddModal() {
+  editingTicker = null;
+  document.getElementById('formTitle').textContent = '+ เพิ่มหุ้นใหม่';
+  document.getElementById('fDeleteBtn').style.display = 'none';
+  // Reset form
+  ['fTicker','fName','fExchange','fTvSymbol'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fMarket').value = 'US';
+  document.getElementById('fGroup').value = 'quality';
+  document.getElementById('fPrice').value = '';
+  document.getElementById('fEps').value = '';
+  document.getElementById('fN').value = '3.5';
+  document.getElementById('fAvgPE').value = '';
+  buildPEYearInputs();
+  YEARS.forEach(y => { const el = document.getElementById('pe_'+y); if(el) el.value=''; });
+  document.getElementById('formCalcPreview').textContent = 'กรอกข้อมูลเพื่อดู preview...';
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openEditModal(ticker) {
+  editingTicker = ticker;
+  const s = stocks.find(x => x.ticker === ticker);
+  if (!s) return;
+  document.getElementById('formTitle').textContent = `✏️ แก้ไข ${ticker}`;
+  document.getElementById('fDeleteBtn').style.display = 'inline-flex';
+  document.getElementById('fTicker').value = s.ticker;
+  document.getElementById('fName').value = s.name || '';
+  document.getElementById('fMarket').value = s.market;
+  document.getElementById('fExchange').value = s.exchange || '';
+  document.getElementById('fGroup').value = s.group || 'quality';
+  document.getElementById('fTvSymbol').value = s.tvSymbol || '';
+  document.getElementById('fPrice').value = s.price;
+  document.getElementById('fEps').value = s.eps;
+  document.getElementById('fN').value = s.n;
+  document.getElementById('fAvgPE').value = s.avgPE;
+  buildPEYearInputs();
+  YEARS.forEach(y => {
+    const el = document.getElementById('pe_'+y);
+    if (el && s.pe && s.pe[y] !== undefined) el.value = s.pe[y];
+  });
+  calcFormPreview();
+  document.getElementById('formModal').classList.add('open');
+}
+
+function calcFormPreview() {
+  // Recalculate avg PE from filled year values
+  const peVals = YEARS.map(y => {
+    const el = document.getElementById('pe_'+y);
+    if (!el || !el.value) return null;
+    const v = parseFloat(el.value);
+    return (isNaN(v) || v <= 0) ? null : v;
+  }).filter(v => v !== null);
+  let avgPE = parseFloat(document.getElementById('fAvgPE').value);
+  if (!avgPE && peVals.length > 0) {
+    avgPE = peVals.reduce((a,b)=>a+b,0) / peVals.length;
+    document.getElementById('fAvgPE').placeholder = `คำนวณได้: ${avgPE.toFixed(2)}`;
+  }
+  const price = parseFloat(document.getElementById('fPrice').value);
+  const eps = parseFloat(document.getElementById('fEps').value);
+  const n = parseFloat(document.getElementById('fN').value);
+  const curr = document.getElementById('fMarket').value === 'US' ? '$' : '฿';
+  if (!avgPE || !price || !eps || !n) {
+    document.getElementById('formCalcPreview').textContent = 'กรอกข้อมูลที่จำเป็นให้ครบ...';
+    return;
+  }
+  const ivNoMos = calcIV(eps, avgPE, n, 0.15);
+  const iRet = calcIMOS15(eps, avgPE, n, price);
+  const watch = calcWatch(iRet);
+  const fmt = v => v>=1000?v.toFixed(0):v.toFixed(2);
+  document.getElementById('formCalcPreview').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+      <div><div style="font-size:11px;color:var(--muted)">P/E เฉลี่ย</div><strong>${avgPE.toFixed(2)}x</strong></div>
+      <div><div style="font-size:11px;color:var(--muted)">IV No MOS @15%</div><strong>${curr}${fmt(ivNoMos)}</strong></div>
+      <div><div style="font-size:11px;color:var(--muted)">IV MOS15% @15%</div><strong>${curr}${fmt(ivNoMos*0.85)}</strong></div>
+      <div><div style="font-size:11px;color:var(--muted)">ผลตอบแทนที่คาด (i%)</div><strong class="${iRet>=10?'ret-good':'ret-low'}">${iRet.toFixed(2)}%</strong></div>
+      <div><div style="font-size:11px;color:var(--muted)">น่าดูต่อ</div><strong>${watch?'✅ YES':'❌ NO'}</strong></div>
+    </div>
+  `;
+}
+
+function saveForm() {
+  const ticker = document.getElementById('fTicker').value.trim().toUpperCase();
+  if (!ticker) { alert('กรุณาใส่ Ticker'); return; }
+  const price = parseFloat(document.getElementById('fPrice').value);
+  const eps = parseFloat(document.getElementById('fEps').value);
+  const n = parseFloat(document.getElementById('fN').value);
+  if (!price || !eps || !n) { alert('กรุณาใส่ราคา, EPS และ n'); return; }
+  const peVals = {};
+  YEARS.forEach(y => {
+    const el = document.getElementById('pe_'+y);
+    if (el && el.value) { const v = parseFloat(el.value); if (!isNaN(v) && v > 0) peVals[y] = v; }
+  });
+  const peArr = Object.values(peVals);
+  let avgPE = parseFloat(document.getElementById('fAvgPE').value);
+  if (!avgPE && peArr.length > 0) avgPE = peArr.reduce((a,b)=>a+b,0) / peArr.length;
+  if (!avgPE) { alert('กรุณาใส่ P/E เฉลี่ย หรือ ประวัติ P/E อย่างน้อย 1 ปี'); return; }
+  const market = document.getElementById('fMarket').value;
+  const exchange = document.getElementById('fExchange').value || (market==='TH'?'SET':'NYSE');
+  const tvS = document.getElementById('fTvSymbol').value.trim() || (market==='TH'?`SET:${ticker}`:`${exchange}:${ticker}`);
+  const newStock = {
+    ticker, name: document.getElementById('fName').value.trim(),
+    market, exchange, group: document.getElementById('fGroup').value,
+    tvSymbol: tvS, price, eps, n,
+    avgPE: parseFloat(avgPE.toFixed(4)), pe: peVals
+  };
+  if (editingTicker) {
+    const idx = stocks.findIndex(s => s.ticker === editingTicker);
+    if (idx >= 0) stocks[idx] = newStock;
+  } else {
+    if (stocks.find(s => s.ticker === ticker)) { alert(`Ticker ${ticker} มีอยู่แล้ว`); return; }
+    stocks.push(newStock);
+  }
+  saveStocks();
+  closeForm();
+  renderTable();
+  if (editingTicker) openDetail(ticker);
+}
+
+function deleteCurrentStock() {
+  if (!editingTicker) return;
+  if (!confirm(`ต้องการลบ ${editingTicker} ออกจากรายการ?`)) return;
+  stocks = stocks.filter(s => s.ticker !== editingTicker);
+  saveStocks();
+  closeForm();
+  closeDetail();
+  renderTable();
+}
+
+function closeForm() {
+  document.getElementById('formModal').classList.remove('open');
+  editingTicker = null;
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(msg, type = 'info', duration = 3500) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  const icons = {success:'✅', error:'❌', info:'ℹ️', warn:'⚠️'};
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { toast.classList.add('show'); }); });
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ============================================================
+// SETTINGS (FMP API KEY)
+// ============================================================
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem('stockSettings') || '{}'); } catch(e) { return {}; }
+}
+function saveSettings() {
+  const key = document.getElementById('sFmpKey').value.trim();
+  localStorage.setItem('stockSettings', JSON.stringify({fmpKey: key}));
+  updateSettingsBtn();
+  closeSettings();
+  showToast(key ? 'บันทึก API Key สำเร็จ ✓ ตอนนี้ดึงประวัติ P/E 10 ปีได้แล้ว' : 'ลบ API Key แล้ว', key ? 'success' : 'info');
+}
+function openSettings() {
+  const s = getSettings();
+  document.getElementById('sFmpKey').value = s.fmpKey || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+function updateSettingsBtn() {
+  const s = getSettings();
+  const btn = document.getElementById('settingsBtn');
+  btn.innerHTML = s.fmpKey ? '⚙️ API ✓' : '⚙️ API Key';
+  btn.style.background = s.fmpKey ? 'rgba(16,185,129,.25)' : '';
+}
+
+// ============================================================
+// FETCH ENGINE — ใช้หลาย proxy อัตโนมัติ
+// ============================================================
+const PROXIES = [
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+];
+
+async function tryFetch(url, ms = 10000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, {signal: ctrl.signal, headers: {'Accept': 'application/json'}});
+    clearTimeout(tid);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch(e) {
+    clearTimeout(tid);
+    throw e;
+  }
+}
+
+async function fetchAny(apiUrl, ms = 10000) {
+  let lastErr;
+  for (const makeProxy of PROXIES) {
+    try { return await tryFetch(makeProxy(apiUrl), ms); }
+    catch(e) { lastErr = e; }
+  }
+  throw new Error(`ทุก proxy ล้มเหลว — ${lastErr?.message || ''}`);
+}
+
+// ============================================================
+// YAHOO FINANCE v6 QUOTE (ราคา + EPS + PE ปัจจุบัน)
+// ใช้ v6/finance/quote — ไม่ต้องการ crumb/cookie ทำงานได้จาก browser
+// ============================================================
+async function fetchYahooFinance(ticker, market) {
+  const yahooTicker = market === 'TH' ? `${ticker}.BK` : ticker;
+  const fields = 'regularMarketPrice,trailingPE,epsTrailingTwelveMonths,forwardPE,longName,shortName,currency,fullExchangeName';
+  const apiUrl = `https://query2.finance.yahoo.com/v6/finance/quote?symbols=${yahooTicker}&fields=${fields}`;
+  const json = await fetchAny(apiUrl);
+  const r = json?.quoteResponse?.result?.[0];
+  if (!r) throw new Error(`ไม่พบข้อมูลสำหรับ ${yahooTicker}`);
+  return {
+    price:      r.regularMarketPrice,
+    eps:        r.epsTrailingTwelveMonths,
+    trailingPE: r.trailingPE,
+    forwardPE:  r.forwardPE,
+    name:       r.longName || r.shortName || '',
+    currency:   r.currency || (market === 'TH' ? 'THB' : 'USD'),
+    exchange:   r.fullExchangeName || '',
+    yahooTicker
+  };
+}
+
+// ============================================================
+// FMP HISTORICAL P/E (สูงสุด 10 ปี — ต้องการ FMP API Key)
+// ฟรี 250 req/วัน ที่ https://financialmodelingprep.com
+// ============================================================
+async function fetchFMPHistoricalPE(ticker, market) {
+  const s = getSettings();
+  if (!s.fmpKey) throw new Error('ยังไม่มี FMP API Key — กดปุ่ม ⚙️ API Key เพื่อกรอก');
+  // FMP ใช้ SET: ticker ตรงๆ ไม่มี .BK (เช่น BDMS, AOT)
+  const fmpTicker = ticker;
+  const apiUrl = `https://financialmodelingprep.com/api/v3/key-metrics/${fmpTicker}?limit=10&apikey=${s.fmpKey}`;
+  const data = await fetchAny(apiUrl);
+  if (!Array.isArray(data) || data.length === 0) throw new Error(`FMP: ไม่พบข้อมูลสำหรับ ${fmpTicker}`);
+  // data = [{calendarYear:"2024", peRatio:34.97, ...}, ...]
+  // กรองเฉพาะ 10 ปีล่าสุด และเฉพาะที่มีค่า
+  const cutoff = new Date().getFullYear() - 10;
+  const peMap = {};
+  data.forEach(row => {
+    const yr = parseInt(row.calendarYear || row.date?.slice(0,4));
+    const pe = parseFloat(row.peRatio);
+    if (yr && yr >= cutoff && pe > 0 && isFinite(pe)) {
+      peMap[yr] = parseFloat(pe.toFixed(2));
+    }
+  });
+  return peMap; // {2015:34.2, 2016:28.1, ...}
+}
+
+// ============================================================
+// FETCH & FILL FORM (ปุ่มใน form modal)
+// ============================================================
+async function fetchAndFillForm() {
+  const ticker = document.getElementById('fTicker').value.trim().toUpperCase();
+  const market = document.getElementById('fMarket').value;
+  if (!ticker) { showToast('กรุณาใส่ Ticker ก่อน', 'warn'); return; }
+
+  const btn = document.getElementById('formFetchBtn');
+  const resBox = document.getElementById('fetchResultBox');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> กำลังดึงข้อมูล...';
+  resBox.className = 'fetch-result';
+  resBox.style.display = 'none';
+
+  try {
+    const data = await fetchYahooFinance(ticker, market);
+    const curr = market === 'US' ? '$' : '฿';
+    const fmt = v => (v != null && !isNaN(v)) ? parseFloat(v).toFixed(2) : '—';
+
+    // Fill fields
+    if (data.price != null)      document.getElementById('fPrice').value = parseFloat(data.price).toFixed(2);
+    if (data.eps != null)        document.getElementById('fEps').value   = parseFloat(data.eps).toFixed(4);
+    if (data.name && !document.getElementById('fName').value)
+      document.getElementById('fName').value = data.name;
+    if (data.exchange && !document.getElementById('fExchange').value)
+      document.getElementById('fExchange').value = data.exchange;
+
+    // Fill current year P/E (trailing PE → current year)
+    const currentYear = new Date().getFullYear();
+    const pe = data.trailingPE;
+    if (pe != null && !isNaN(pe) && pe > 0) {
+      const peEl = document.getElementById(`pe_${currentYear}`);
+      if (peEl) { peEl.value = parseFloat(pe).toFixed(2); peEl.style.background = '#f0fdf4'; }
+    }
+
+    // Try to fetch historical P/E from FMP if key is set
+    let fmpNote = '';
+    const hasFmpKey = !!getSettings().fmpKey;
+    if (hasFmpKey) {
+      try {
+        const peMap = await fetchFMPHistoricalPE(ticker, market);
+        let filled = 0;
+        Object.entries(peMap).forEach(([yr, val]) => {
+          const el = document.getElementById(`pe_${yr}`);
+          if (el) { el.value = val; el.style.background = '#f0fdf4'; filled++; }
+        });
+        fmpNote = `<div style="font-size:11px;color:#166534;margin-top:4px">📊 ดึง P/E ย้อนหลัง ${filled} ปี จาก FMP สำเร็จ</div>`;
+      } catch(e) {
+        fmpNote = `<div style="font-size:11px;color:#92400e;margin-top:4px">⚠️ FMP P/E: ${e.message}</div>`;
+      }
+    }
+
+    // Show result box
+    resBox.className = 'fetch-result show';
+    resBox.innerHTML = `
+      <div style="font-weight:700;color:#166534;margin-bottom:6px">✅ ดึงข้อมูลสำเร็จ — ${data.yahooTicker}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;font-size:12px">
+        <div><span style="color:var(--muted)">ราคา: </span><strong>${curr}${fmt(data.price)}</strong></div>
+        <div><span style="color:var(--muted)">EPS (TTM): </span><strong>${curr}${fmt(data.eps)}</strong></div>
+        <div><span style="color:var(--muted)">P/E Trailing: </span><strong>${fmt(data.trailingPE)}x</strong></div>
+        <div><span style="color:var(--muted)">P/E Forward: </span><strong>${fmt(data.forwardPE)}x</strong></div>
+        <div><span style="color:var(--muted)">สกุลเงิน: </span><strong>${data.currency}</strong></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">
+        📌 P/E trailing ถูกใส่ในปี ${currentYear} อัตโนมัติ — ตรวจสอบและปรับค่า P/E เฉลี่ยตามต้องการ
+      </div>
+      ${hasFmpKey ? fmpNote : '<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 กด ⚙️ API Key เพื่อเพิ่ม FMP key สำหรับดึง P/E ย้อนหลัง 10 ปีอัตโนมัติ</div>'}`;
+    calcFormPreview();
+    showToast(`ดึงข้อมูล ${ticker} สำเร็จ`, 'success');
+  } catch(err) {
+    resBox.className = 'fetch-result error show';
+    resBox.innerHTML = `
+      <div style="font-weight:700;color:#991b1b;margin-bottom:4px">❌ ดึงข้อมูลไม่สำเร็จ</div>
+      <div style="font-size:12px">${err.message}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        ลองตรวจสอบ Ticker หรือเชื่อมต่ออินเทอร์เน็ต — กรอกข้อมูลเองได้ด้านล่าง
+      </div>`;
+    showToast(`ดึงข้อมูลไม่สำเร็จ: ${ticker}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 ดึงข้อมูล';
+  }
+}
+
+// ============================================================
+// FETCH & UPDATE DETAIL MODAL (ปุ่มใน detail view)
+// ============================================================
+async function fetchAndUpdateDetail() {
+  if (!selectedTicker) return;
+  const s = stocks.find(x => x.ticker === selectedTicker);
+  if (!s) return;
+  const btn = document.getElementById('detailFetchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const data = await fetchYahooFinance(s.ticker, s.market);
+    const currentYear = new Date().getFullYear();
+    const cutoff = currentYear - 10; // ไม่เกิน 10 ปี
+    let changed = [];
+
+    if (data.price != null && !isNaN(data.price)) {
+      s.price = parseFloat(parseFloat(data.price).toFixed(4));
+      changed.push(`ราคา → ${s.price}`);
+    }
+    if (data.eps != null && !isNaN(data.eps) && data.eps !== 0) {
+      s.eps = parseFloat(parseFloat(data.eps).toFixed(4));
+      changed.push(`EPS → ${s.eps}`);
+    }
+    if (data.trailingPE != null && !isNaN(data.trailingPE) && data.trailingPE > 0) {
+      if (!s.pe) s.pe = {};
+      s.pe[currentYear] = parseFloat(parseFloat(data.trailingPE).toFixed(2));
+      changed.push(`P/E ${currentYear} → ${s.pe[currentYear]}x`);
+    }
+
+    // Try FMP for historical P/E (up to 10 years)
+    if (getSettings().fmpKey) {
+      try {
+        const peMap = await fetchFMPHistoricalPE(s.ticker, s.market);
+        if (!s.pe) s.pe = {};
+        Object.entries(peMap).forEach(([yr, val]) => {
+          if (parseInt(yr) >= cutoff) s.pe[yr] = val;
+        });
+        changed.push(`P/E ย้อนหลัง ${Object.keys(peMap).length} ปี (FMP)`);
+      } catch(e) { /* FMP optional */ }
+    }
+
+    // Keep only last 10 years of P/E, recalculate avgPE
+    if (s.pe) {
+      const filtered = {};
+      Object.entries(s.pe).forEach(([yr, v]) => { if (parseInt(yr) >= cutoff && v > 0) filtered[yr] = v; });
+      s.pe = filtered;
+      const vals = Object.values(s.pe).filter(v => v > 0);
+      if (vals.length > 0) s.avgPE = parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(4));
+    }
+
+    saveStocks();
+    renderTable();
+    openDetail(s.ticker);
+    showToast(`อัปเดต ${s.ticker} สำเร็จ: ${changed.join(' | ')}`, 'success', 5000);
+  } catch(err) {
+    showToast(`ดึงข้อมูล ${s.ticker} ไม่สำเร็จ: ${err.message}`, 'error', 5000);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 ดึงข้อมูล';
+  }
+}
+
+// ============================================================
+// FETCH ALL PRICES (ปุ่มใน header)
+// ============================================================
+async function fetchAllPrices() {
+  const btn = document.getElementById('updateAllBtn');
+  const bar = document.getElementById('bulkBar');
+  const fill = document.getElementById('bulkBarFill');
+  btn.disabled = true;
+  bar.classList.add('show');
+  fill.style.width = '0%';
+
+  const total = stocks.length;
+  let done = 0, ok = 0, fail = 0;
+
+  showToast(`กำลังดึงข้อมูล ${total} ตัว... (อาจใช้เวลา 1-2 นาที)`, 'info', 8000);
+
+  const currentYear = new Date().getFullYear();
+  const cutoff = currentYear - 10;
+
+  for (const s of stocks) {
+    try {
+      const data = await fetchYahooFinance(s.ticker, s.market);
+      if (data.price != null && !isNaN(data.price)) s.price = parseFloat(parseFloat(data.price).toFixed(4));
+      if (data.eps != null && !isNaN(data.eps) && data.eps !== 0) s.eps = parseFloat(parseFloat(data.eps).toFixed(4));
+      if (data.trailingPE != null && !isNaN(data.trailingPE) && data.trailingPE > 0) {
+        if (!s.pe) s.pe = {};
+        s.pe[currentYear] = parseFloat(parseFloat(data.trailingPE).toFixed(2));
+        // Keep only last 10 years
+        const filtered = {};
+        Object.entries(s.pe).forEach(([yr, v]) => { if (parseInt(yr) >= cutoff && v > 0) filtered[yr] = v; });
+        s.pe = filtered;
+        const vals = Object.values(s.pe).filter(v => v > 0);
+        if (vals.length > 0) s.avgPE = parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(4));
+      }
+      ok++;
+    } catch(e) {
+      fail++;
+    }
+    done++;
+    fill.style.width = `${Math.round((done/total)*100)}%`;
+    btn.innerHTML = `🔄 ${done}/${total}`;
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  saveStocks();
+  renderTable();
+  if (selectedTicker) openDetail(selectedTicker);
+
+  btn.disabled = false;
+  btn.innerHTML = '🔄 Update All';
+  setTimeout(() => { bar.classList.remove('show'); fill.style.width='0%'; }, 2000);
+  showToast(`อัปเดตเสร็จ: ✅ ${ok} ตัว  ❌ ${fail} ตัว`, ok > fail ? 'success' : 'warn', 6000);
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportData() {
+  const data = JSON.stringify(stocks, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stock-analysis-data.json';
+  a.click();
+}
+
+// Close modal on overlay click
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+document.getElementById('formModal').addEventListener('click', function(e) {
+  if (e.target === this) closeForm();
+});
+// ESC key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDetail(); closeForm(); }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+loadStocks();
+renderTable();
+updateSettingsBtn();
+</script>
+</body>
+</html>
