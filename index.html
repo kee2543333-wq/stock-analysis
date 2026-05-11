@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VCB Group – คำขอสินเชื่อ</title>
+<style>
+  :root {
+    --navy: #1F3864;
+    --blue: #2E75B6;
+    --lt-blue: #9DC3E6;
+    --xlt-blue: #DEEAF1;
+    --teal: #17375E;
+    --green: #375623;
+    --orange: #ED7D31;
+    --red: #C00000;
+    --gray: #D9D9D9;
+    --white: #FFFFFF;
+    --yellow: #FFFCE5;
+    --font: 'Segoe UI', 'Sarabun', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: #f0f4f8; color: #222; font-size: 14px; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+    color: #fff; padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: .4px; }
+  header p { font-size: 11px; opacity: .75; margin-top: 3px; }
+  .btn-add {
+    background: var(--orange); color: #fff; border: none;
+    padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background .2s; display: flex; align-items: center; gap: 7px;
+    font-family: var(--font);
+  }
+  .btn-add:hover { background: #c96320; }
+
+  /* ── STATS ── */
+  .stats {
+    display: flex; gap: 14px; padding: 18px 28px 6px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: #fff; border-radius: 8px; padding: 14px 20px;
+    border-left: 4px solid var(--blue); box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    min-width: 130px;
+  }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: var(--navy); }
+  .stat-card .lbl { font-size: 11px; color: #666; margin-top: 2px; }
+  .stat-card.aval { border-color: #7030A0; }
+  .stat-card.pn   { border-color: #00B0F0; }
+  .stat-card.tl   { border-color: var(--green); }
+  .stat-card.lg   { border-color: var(--orange); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex; gap: 10px; padding: 10px 28px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .filter-bar select, .filter-bar input {
+    padding: 7px 10px; border: 1px solid #ccc; border-radius: 5px;
+    font-size: 13px; font-family: var(--font); background: #fff;
+  }
+  .filter-bar label { font-size: 12px; color: #555; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    padding: 0 28px 28px; overflow-x: auto;
+  }
+  table {
+    width: 100%; border-collapse: collapse; background: #fff;
+    border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    font-size: 13px;
+  }
+  thead tr { background: var(--navy); color: #fff; }
+  thead th {
+    padding: 11px 12px; text-align: left; font-weight: 600;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #eee; transition: background .15s; }
+  tbody tr:hover { background: var(--xlt-blue); }
+  tbody td { padding: 10px 12px; vertical-align: middle; }
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-aval { background: #E8D4F5; color: #7030A0; }
+  .badge-pn   { background: #D0F0FC; color: #006B99; }
+  .badge-tl   { background: #E2EFDA; color: var(--green); }
+  .badge-lg   { background: #FCE4D6; color: #C55A11; }
+  /* status badges */
+  .sbadge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .sbadge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .sbadge-new      { background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; }
+  .sbadge-new::before { background: #6366F1; }
+  .sbadge-pending  { background: #FFF8E1; color: #92400E; border: 1px solid #FDE68A; }
+  .sbadge-pending::before { background: #F59E0B; }
+  .sbadge-approved { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+  .sbadge-approved::before { background: #10B981; }
+  .action-btn {
+    background: none; border: 1px solid #ccc; border-radius: 4px;
+    padding: 4px 9px; cursor: pointer; font-size: 12px;
+    font-family: var(--font); margin-right: 4px; transition: .15s;
+  }
+  .action-btn:hover { background: var(--xlt-blue); border-color: var(--blue); }
+  .action-btn.del:hover { background: #FFE4E1; border-color: var(--red); color: var(--red); }
+  .empty-row td {
+    text-align: center; padding: 40px; color: #999; font-style: italic;
+  }
+
+  /* ── MODAL ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 100;
+    align-items: flex-start; justify-content: center;
+    overflow-y: auto; padding: 30px 16px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 10px; width: 100%; max-width: 620px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    animation: slideIn .22s ease;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    color: #fff; padding: 16px 22px;
+    border-radius: 10px 10px 0 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-size: 16px; }
+  .modal-close {
+    background: none; border: none; color: #fff; font-size: 22px;
+    cursor: pointer; line-height: 1; padding: 0 4px;
+  }
+  .modal-body { padding: 22px; }
+  .form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label.field-label { font-size: 12px; font-weight: 600; color: #444; }
+  label.field-label .req { color: var(--red); margin-left: 2px; }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 8px 11px; border: 1px solid #ccc; border-radius: 5px;
+    font-size: 13px; font-family: var(--font);
+    transition: border .15s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none; border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(46,117,182,.15);
+  }
+  .form-group input.err,
+  .form-group select.err { border-color: var(--red); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .prefix-row { display: flex; gap: 0; }
+  .prefix-lbl {
+    background: var(--xlt-blue); border: 1px solid #ccc;
+    border-right: none; border-radius: 5px 0 0 5px;
+    padding: 8px 10px; font-size: 12px; color: #555;
+    white-space: nowrap; display: flex; align-items: center;
+  }
+  .prefix-row input {
+    border-radius: 0 5px 5px 0 !important; flex: 1;
+  }
+
+  /* dynamic section */
+  .type-section { display: none; }
+  .type-section.active { display: contents; }
+
+  .section-divider {
+    grid-column: 1/-1; padding: 8px 0 2px;
+    font-size: 11px; font-weight: 700; color: var(--teal);
+    text-transform: uppercase; letter-spacing: .6px;
+    border-bottom: 1px solid var(--lt-blue); margin-bottom: 2px;
+  }
+
+  .modal-footer {
+    padding: 16px 22px; border-top: 1px solid #eee;
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .btn-cancel {
+    background: #fff; color: #555; border: 1px solid #ccc;
+    padding: 9px 20px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; font-family: var(--font);
+  }
+  .btn-cancel:hover { background: #f5f5f5; }
+  .btn-save {
+    background: var(--navy); color: #fff; border: none;
+    padding: 9px 24px; border-radius: 6px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: var(--font);
+    transition: background .15s;
+  }
+  .btn-save:hover { background: var(--blue); }
+
+  /* ── DETAIL PANEL ── */
+  .detail-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.4); z-index: 200;
+    align-items: center; justify-content: flex-end;
+  }
+  .detail-overlay.open { display: flex; }
+  .detail-panel {
+    background: #fff; width: 380px; height: 100%;
+    overflow-y: auto; box-shadow: -4px 0 20px rgba(0,0,0,.15);
+    animation: slideRight .2s ease;
+  }
+  @keyframes slideRight {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .detail-panel .dp-header {
+    background: var(--navy); color: #fff; padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .detail-panel .dp-header h3 { font-size: 15px; }
+  .dp-body { padding: 20px; }
+  .dp-row { margin-bottom: 14px; }
+  .dp-row .dp-lbl { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; margin-bottom: 3px; }
+  .dp-row .dp-val { font-size: 14px; color: #222; }
+  .dp-divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+
+  /* ── date range ── */
+  .date-range { display: flex; align-items: center; gap: 6px; }
+  .date-range input { flex: 1; }
+  .date-range .dr-sep {
+    font-size: 12px; color: #888; white-space: nowrap; padding: 0 2px;
+  }
+
+  /* ── export btn ── */
+  .btn-export {
+    background: #217346; color: #fff; border: none;
+    padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    font-family: var(--font); transition: background .2s;
+  }
+  .btn-export:hover { background: #1a5c38; }
+</style>
+</head>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <h1>📋 VCB Group – คำขอสินเชื่อ</h1>
+    <p>กลุ่มวิจิตรภัณฑ์ก่อสร้าง | ระบบจัดการคำขอสินเชื่อ</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button class="btn-export" onclick="exportExcel()">📥 Export Excel</button>
+    <button class="btn-add" onclick="openAdd()">＋ เพิ่มคำขอ</button>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats" id="statsBar">
+  <div class="stat-card"><div class="num" id="statAll">0</div><div class="lbl">คำขอทั้งหมด</div></div>
+  <div class="stat-card aval"><div class="num" id="statAval">0</div><div class="lbl">Aval</div></div>
+  <div class="stat-card pn">  <div class="num" id="statPN">0</div>  <div class="lbl">P/N</div></div>
+  <div class="stat-card tl">  <div class="num" id="statTL">0</div>  <div class="lbl">TL</div></div>
+  <div class="stat-card lg">  <div class="num" id="statLG">0</div>  <div class="lbl">LG</div></div>
+  <div class="stat-card" style="border-color:#6366F1"><div class="num" id="statNew">0</div><div class="lbl">คำขอใหม่</div></div>
+  <div class="stat-card" style="border-color:#F59E0B"><div class="num" id="statPend">0</div><div class="lbl">รอเสนออนุมัติ</div></div>
+  <div class="stat-card" style="border-color:#10B981"><div class="num" id="statAppr">0</div><div class="lbl">อนุมัติแล้ว</div></div>
+</div>
+
+<!-- FILTER -->
+<div class="filter-bar">
+  <select id="fCompany" onchange="renderTable()">
+    <option value="">ทุกบริษัท</option>
+    <option>วิจิตรภัณฑ์ก่อสร้าง</option>
+    <option>ชวนา เอ็นจิเนียร์ริ่ง</option>
+    <option>กิจการร่วมค้า วีเอ็น</option>
+    <option>กิจการร่วมค้า วีเค</option>
+    <option>กิจการร่วมค้า วีแอนด์เค</option>
+  </select>
+  <select id="fType" onchange="renderTable()">
+    <option value="">ทุกประเภท</option>
+    <option>Aval</option><option>P/N</option><option>TL</option><option>LG</option>
+  </select>
+  <select id="fProject" onchange="renderTable()">
+    <option value="">ทุกโครงการ</option>
+    <option>บางเตย 1</option><option>บางเตย 2</option>
+    <option>บางวัว</option><option>บรมตอน 4</option><option>บรมตอน 3</option>
+  </select>
+  <select id="fStatus" onchange="renderTable()">
+    <option value="">ทุกสถานะ</option>
+    <option value="new">คำขอใหม่</option>
+    <option value="pending">อยู่ระหว่างเสนออนุมัติ</option>
+    <option value="approved">อนุมัติแล้ว</option>
+  </select>
+  <input id="fSearch" type="text" placeholder="🔍 ค้นหา…" oninput="renderTable()" style="min-width:160px">
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>วันที่ขอ</th>
+        <th>บริษัท</th>
+        <th>โครงการ</th>
+        <th>ประเภท</th>
+        <th>จำนวน (บาท)</th>
+        <th>วัตถุประสงค์ / รายละเอียด</th>
+        <th>เอกสารแนบ</th>
+        <th>สถานะ</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<!-- ══════════════ ADD/EDIT MODAL ══════════════ -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">เพิ่มคำขอสินเชื่อ</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+
+        <!-- ── Common fields ── -->
+        <div class="form-group">
+          <label class="field-label">บริษัท <span class="req">*</span></label>
+          <select id="fBiz">
+            <option value="">— เลือกบริษัท —</option>
+            <option>วิจิตรภัณฑ์ก่อสร้าง</option>
+            <option>ชวนา เอ็นจิเนียร์ริ่ง</option>
+            <option>กิจการร่วมค้า วีเอ็น</option>
+            <option>กิจการร่วมค้า วีเค</option>
+            <option>กิจการร่วมค้า วีแอนด์เค</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">โครงการ <span class="req">*</span></label>
+          <select id="fProj">
+            <option value="">— เลือกโครงการ —</option>
+            <option>บางเตย 1</option>
+            <option>บางเตย 2</option>
+            <option>บางวัว</option>
+            <option>บรมตอน 4</option>
+            <option>บรมตอน 3</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">ประเภทสินเชื่อ <span class="req">*</span></label>
+          <select id="fType2" onchange="onTypeChange()">
+            <option value="">— เลือกประเภท —</option>
+            <option value="Aval">Aval</option>
+            <option value="PN">P/N</option>
+            <option value="TL">TL</option>
+            <option value="LG">LG</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">จำนวนเงิน (บาท) <span class="req">*</span></label>
+          <input type="number" id="fAmount" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <!-- ── AVAL fields ── -->
+        <div class="type-section" id="sec-Aval">
+          <div class="section-divider">รายละเอียด – Aval</div>
+
+          <div class="form-group full">
+            <label class="field-label">วัตถุประสงค์ <span class="req">*</span></label>
+            <div class="prefix-row">
+              <span class="prefix-lbl">เพื่อชำระค่า</span>
+              <input type="text" id="fAvalPurpose" placeholder="ค่า...">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">ผู้รับผลประโยชน์ <span class="req">*</span></label>
+            <input type="text" id="fAvalBenef" placeholder="ชื่อบริษัท / บุคคล">
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">เลขที่เอกสารอ้างอิง</label>
+            <input type="text" id="fAvalRefNo" placeholder="เลขที่ใบแจ้งหนี้ / PO">
+          </div>
+
+          <div class="form-group full">
+            <label class="field-label">วันที่เอกสารอ้างอิง (ช่วง)</label>
+            <div class="date-range">
+              <input type="date" id="fAvalRefDateFrom" title="วันที่เริ่มต้น">
+              <span class="dr-sep">ถึง</span>
+              <input type="date" id="fAvalRefDateTo" title="วันที่สิ้นสุด">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PN fields ── -->
+        <div class="type-section" id="sec-PN">
+          <div class="section-divider">รายละเอียด – P/N</div>
+
+          <div class="form-group">
+            <label class="field-label">วัตถุประสงค์ <span class="req">*</span></label>
+            <select id="fPNPurpose" onchange="onPNPurposeChange()">
+              <option value="">— เลือก —</option>
+              <option value="เพื่อหมุนเวียน">เพื่อหมุนเวียน</option>
+              <option value="เพื่อชำระ Aval">เพื่อชำระ Aval</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="grpPNAgainst">
+            <label class="field-label">Against</label>
+            <input type="text" id="fPNAgainst" placeholder="เลขที่ L/C / เอกสาร">
+          </div>
+        </div>
+
+        <!-- ── TL fields ── -->
+        <div class="type-section" id="sec-TL">
+          <div class="section-divider">รายละเอียด – TL</div>
+
+          <div class="form-group full">
+            <label class="field-label">วัตถุประสงค์ <span class="req">*</span></label>
+            <div class="prefix-row">
+              <span class="prefix-lbl">เพื่อชำระค่า</span>
+              <input type="text" id="fTLPurpose" placeholder="ค่า...">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LG fields ── -->
+        <div class="type-section" id="sec-LG">
+          <div class="section-divider">รายละเอียด – LG</div>
+
+          <div class="form-group">
+            <label class="field-label">ประเภท LG <span class="req">*</span></label>
+            <select id="fLGSubtype">
+              <option value="">— เลือก —</option>
+              <option>สัญญา</option>
+              <option>รับเงินล่วงหน้า</option>
+              <option>Retention</option>
+              <option>ไฟฟ้า</option>
+              <option>วัสดุ</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">ผู้รับผลประโยชน์ <span class="req">*</span></label>
+            <input type="text" id="fLGBenef" placeholder="ชื่อหน่วยงาน / บริษัท">
+          </div>
+        </div>
+
+        <!-- ── Attachment & notes (always shown) ── -->
+        <div class="section-divider full">เอกสารแนบ & สถานะ</div>
+
+        <div class="form-group full">
+          <label class="field-label">เอกสารแนบ (อีเมล / แหล่งที่มา)</label>
+          <input type="text" id="fAttachDesc" placeholder="เช่น อีเมล จาก คุณ... / เลขที่เอกสาร">
+        </div>
+        <div class="form-group full">
+          <label class="field-label">วันที่เอกสารแนบ (ช่วง)</label>
+          <div class="date-range">
+            <input type="date" id="fAttachDateFrom" title="วันที่เริ่มต้น">
+            <span class="dr-sep">ถึง</span>
+            <input type="date" id="fAttachDateTo" title="วันที่สิ้นสุด">
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label class="field-label">สถานะคำขอ</label>
+          <select id="fStatusForm">
+            <option value="new">🔵 คำขอใหม่</option>
+            <option value="pending">🟡 อยู่ระหว่างเสนออนุมัติ</option>
+            <option value="approved">🟢 อนุมัติแล้ว</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label class="field-label">หมายเหตุ</label>
+          <textarea id="fNote" placeholder="รายละเอียดเพิ่มเติม..." rows="2"></textarea>
+        </div>
+
+      </div><!-- /form-grid -->
+    </div><!-- /modal-body -->
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn-save" onclick="saveRequest()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL SIDE PANEL -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="dp-header">
+      <h3 id="dpTitle">รายละเอียดคำขอ</h3>
+      <button class="modal-close" onclick="closeDetailPanel()">✕</button>
+    </div>
+    <div class="dp-body" id="dpBody"></div>
+  </div>
+</div>
+
+<script>
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAOTNXP46nXoSWowk6wKLUQECHU2VqaEMw",
+  authDomain: "customer-request-70042.firebaseapp.com",
+  projectId: "customer-request-70042",
+  storageBucket: "customer-request-70042.firebasestorage.app",
+  messagingSenderId: "788965927692",
+  appId: "1:788965927692:web:4d99958d61ca2a4c723729"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const COL = 'vcb_requests';
+
+// ─── DATA STORE ───────────────────────────────────────────────────────────
+let requests = [];
+let editId = null;
+let nextId = 1;
+
+async function saveToFirestore(obj) {
+  try {
+    await db.collection(COL).doc(String(obj.id)).set(obj);
+  } catch(e) {
+    console.error(e);
+    alert('บันทึกไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function deleteFromFirestore(id) {
+  try {
+    await db.collection(COL).doc(String(id)).delete();
+  } catch(e) {
+    alert('ลบไม่สำเร็จ: ' + e.message);
+  }
+}
+
+function listenFirestore() {
+  db.collection(COL).onSnapshot(snapshot => {
+    requests = snapshot.docs.map(doc => doc.data());
+    requests.sort((a, b) => (b._ts || 0) - (a._ts || 0) || b.id - a.id);
+    if (requests.length > 0) {
+      nextId = Math.max(...requests.map(r => typeof r.id === 'number' ? r.id : 0)) + 1;
+    }
+    renderTable();
+    updateStats();
+  }, err => {
+    alert('เชื่อมต่อ Firestore ไม่ได้\n' + err.message + '\n\nกรุณาตั้งค่า Firestore Rules ให้ allow read, write');
+  });
+}
+
+async function initFirestore() {
+  try {
+    const snap = await db.collection(COL).limit(1).get();
+    if (snap.empty) {
+      // ครั้งแรก — บันทึกข้อมูล 61 รายการขึ้น Firestore
+      const allData = [...initData, ...moreData];
+      const batch = db.batch();
+      allData.forEach(obj => {
+        obj._ts = obj.id;
+        batch.set(db.collection(COL).doc(String(obj.id)), obj);
+      });
+      await batch.commit();
+    }
+    listenFirestore();
+  } catch(e) {
+    alert('เชื่อมต่อ Firestore ไม่ได้\n' + e.message + '\n\nกรุณาตั้งค่า Firestore Rules ให้ allow read, write');
+  }
+}
+
+// ─── TYPE TOGGLE ────────────────────────────────────────────────────────────
+function onTypeChange() {
+  const t = document.getElementById('fType2').value;
+  ['Aval','PN','TL','LG'].forEach(s => {
+    const el = document.getElementById('sec-' + s);
+    el.classList.toggle('active', s === t);
+  });
+}
+
+function onPNPurposeChange() {
+  const v = document.getElementById('fPNPurpose').value;
+  document.getElementById('grpPNAgainst').style.display = v === 'เพื่อชำระ Aval' ? '' : 'none';
+}
+
+// ─── MODAL ──────────────────────────────────────────────────────────────────
+function openAdd() {
+  editId = null;
+  document.getElementById('modalTitle').textContent = 'เพิ่มคำขอสินเชื่อ';
+  clearForm();
+  document.getElementById('modal').classList.add('open');
+}
+
+function openEdit(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  editId = id;
+  document.getElementById('modalTitle').textContent = 'แก้ไขคำขอ';
+  fillForm(r);
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function clearForm() {
+  ['fBiz','fProj','fType2','fAvalPurpose','fAvalBenef','fAvalRefNo',
+   'fAvalRefDateFrom','fAvalRefDateTo',
+   'fPNPurpose','fPNAgainst','fTLPurpose','fLGSubtype','fLGBenef',
+   'fAttachDesc','fAttachDateFrom','fAttachDateTo','fNote']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('fStatusForm').value = 'new';
+  document.getElementById('fAmount').value = '';
+  ['Aval','PN','TL','LG'].forEach(s => document.getElementById('sec-'+s).classList.remove('active'));
+  document.getElementById('grpPNAgainst').style.display = 'none';
+  // Remove err classes
+  document.querySelectorAll('.err').forEach(e => e.classList.remove('err'));
+}
+
+function fillForm(r) {
+  document.getElementById('fBiz').value    = r.company   || '';
+  document.getElementById('fProj').value   = r.project   || '';
+  document.getElementById('fType2').value  = r.type      || '';
+  document.getElementById('fAmount').value = r.amount    || '';
+  document.getElementById('fAttachDesc').value     = r.attachDesc     || '';
+  document.getElementById('fAttachDateFrom').value = r.attachDateFrom  || '';
+  document.getElementById('fAttachDateTo').value   = r.attachDateTo    || '';
+  document.getElementById('fStatusForm').value     = r.status          || 'new';
+  document.getElementById('fNote').value        = r.note   || '';
+  onTypeChange();
+  if (r.type === 'Aval') {
+    document.getElementById('fAvalPurpose').value = r.avalPurpose || '';
+    document.getElementById('fAvalBenef').value   = r.avalBenef   || '';
+    document.getElementById('fAvalRefNo').value       = r.avalRefNo       || '';
+    document.getElementById('fAvalRefDateFrom').value = r.avalRefDateFrom  || '';
+    document.getElementById('fAvalRefDateTo').value   = r.avalRefDateTo    || '';
+  } else if (r.type === 'PN') {
+    document.getElementById('fPNPurpose').value = r.pnPurpose || '';
+    document.getElementById('fPNAgainst').value  = r.pnAgainst || '';
+    onPNPurposeChange();
+  } else if (r.type === 'TL') {
+    document.getElementById('fTLPurpose').value = r.tlPurpose || '';
+  } else if (r.type === 'LG') {
+    document.getElementById('fLGSubtype').value = r.lgSubtype || '';
+    document.getElementById('fLGBenef').value   = r.lgBenef   || '';
+  }
+}
+
+function saveRequest() {
+  // Validation
+  let ok = true;
+  const req = (id, msg) => {
+    const el = document.getElementById(id);
+    if (!el || !el.value.trim()) { if(el) el.classList.add('err'); ok = false; }
+    else el.classList.remove('err');
+  };
+  req('fBiz'); req('fProj'); req('fType2'); req('fAmount');
+
+  const t = document.getElementById('fType2').value;
+  if (t === 'Aval') { req('fAvalPurpose'); req('fAvalBenef'); }
+  if (t === 'PN')   { req('fPNPurpose'); }
+  if (t === 'TL')   { req('fTLPurpose'); }
+  if (t === 'LG')   { req('fLGSubtype'); req('fLGBenef'); }
+
+  if (!ok) { alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน'); return; }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('th-TH', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const obj = {
+    id:       editId || nextId++,
+    company:  document.getElementById('fBiz').value,
+    project:  document.getElementById('fProj').value,
+    type:     t,
+    amount:   parseFloat(document.getElementById('fAmount').value) || 0,
+    attachDesc:     document.getElementById('fAttachDesc').value.trim(),
+    attachDateFrom: document.getElementById('fAttachDateFrom').value,
+    attachDateTo:   document.getElementById('fAttachDateTo').value,
+    status:         document.getElementById('fStatusForm').value || 'new',
+    note:     document.getElementById('fNote').value.trim(),
+    date:     editId ? (requests.find(x=>x.id===editId)||{}).date || dateStr : dateStr,
+    editDate: editId ? dateStr : null,
+  };
+
+  if (t === 'Aval') {
+    obj.avalPurpose = 'เพื่อชำระค่า' + document.getElementById('fAvalPurpose').value.trim();
+    obj.avalBenef   = document.getElementById('fAvalBenef').value.trim();
+    obj.avalRefNo       = document.getElementById('fAvalRefNo').value.trim();
+    obj.avalRefDateFrom = document.getElementById('fAvalRefDateFrom').value;
+    obj.avalRefDateTo   = document.getElementById('fAvalRefDateTo').value;
+  } else if (t === 'PN') {
+    obj.pnPurpose = document.getElementById('fPNPurpose').value;
+    obj.pnAgainst = document.getElementById('fPNAgainst').value.trim();
+  } else if (t === 'TL') {
+    obj.tlPurpose = 'เพื่อชำระค่า' + document.getElementById('fTLPurpose').value.trim();
+  } else if (t === 'LG') {
+    obj.lgSubtype = document.getElementById('fLGSubtype').value;
+    obj.lgBenef   = document.getElementById('fLGBenef').value.trim();
+  }
+
+  obj._ts = Date.now();
+
+  closeModal();
+  saveToFirestore(obj); // บันทึกขึ้น Firestore (onSnapshot จะ update table อัตโนมัติ)
+}
+
+// ─── STATUS HELPERS ──────────────────────────────────────────────────────────
+function statusBadge(s) {
+  const map = {
+    new:      ['sbadge-new',     'คำขอใหม่'],
+    pending:  ['sbadge-pending', 'อยู่ระหว่างเสนออนุมัติ'],
+    approved: ['sbadge-approved','อนุมัติแล้ว'],
+  };
+  const [cls, lbl] = map[s] || map['new'];
+  return `<span class="sbadge ${cls}">${lbl}</span>`;
+}
+
+function statusLabel(s) {
+  return { new:'คำขอใหม่', pending:'อยู่ระหว่างเสนออนุมัติ', approved:'อนุมัติแล้ว' }[s] || 'คำขอใหม่';
+}
+
+// ─── TABLE RENDER ────────────────────────────────────────────────────────────
+function renderTable() {
+  const fComp   = document.getElementById('fCompany').value;
+  const fType   = document.getElementById('fType').value;
+  const fProj   = document.getElementById('fProject').value;
+  const fStat   = document.getElementById('fStatus').value;
+  const fSrch   = document.getElementById('fSearch').value.toLowerCase();
+
+  const filtered = requests.filter(r => {
+    if (fComp && r.company !== fComp) return false;
+    if (fType && r.type !== fType && !(fType === 'P/N' && r.type === 'PN')) return false;
+    if (fProj && r.project !== fProj) return false;
+    if (fStat && (r.status || 'new') !== fStat) return false;
+    if (fSrch) {
+      const blob = [r.company, r.project, r.type, r.date, r.avalBenef, r.lgBenef,
+                    r.avalPurpose, r.tlPurpose, r.pnPurpose, r.note,
+                    r.attachDesc, r.attachDateFrom, r.attachDateTo,
+                    statusLabel(r.status)].join(' ').toLowerCase();
+      if (!blob.includes(fSrch)) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">ยังไม่มีคำขอ — กด "เพิ่มคำขอ" เพื่อเริ่มต้น</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((r, i) => {
+    const badge = `<span class="badge badge-${r.type.toLowerCase()}">${r.type}</span>`;
+    const amt   = r.amount ? r.amount.toLocaleString('th-TH', {minimumFractionDigits:2}) : '-';
+    const detail = getDetail(r);
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${r.date}${r.editDate ? '<br><span style="font-size:10px;color:#999">แก้ไข '+r.editDate+'</span>' : ''}</td>
+      <td>${r.company}</td>
+      <td>${r.project}</td>
+      <td>${badge}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${amt}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${detail}">${detail}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666;font-size:12px" title="${fmtAttach(r)}">${fmtAttach(r)||'-'}</td>
+      <td>${statusBadge(r.status || 'new')}</td>
+      <td>
+        <button class="action-btn" onclick="viewDetail(${r.id})">👁 ดู</button>
+        <button class="action-btn" onclick="openEdit(${r.id})">✏️</button>
+        <button class="action-btn del" onclick="deleteReq(${r.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function getDetail(r) {
+  if (r.type === 'Aval') return `${r.avalPurpose || ''}${r.avalBenef ? ' | ' + r.avalBenef : ''}`;
+  if (r.type === 'PN')   return `${r.pnPurpose || ''}${r.pnAgainst ? ' Against: ' + r.pnAgainst : ''}`;
+  if (r.type === 'TL')   return r.tlPurpose || '';
+  if (r.type === 'LG')   return `${r.lgSubtype || ''} | ${r.lgBenef || ''}`;
+  return '';
+}
+
+function fmtAttach(r) {
+  const parts = [];
+  if (r.attachDesc) parts.push(r.attachDesc);
+  if (r.attachDateFrom || r.attachDateTo) {
+    const from = r.attachDateFrom ? fmtDate(r.attachDateFrom) : '';
+    const to   = r.attachDateTo   ? fmtDate(r.attachDateTo)   : '';
+    if (from && to && from !== to) parts.push(`${from} – ${to}`);
+    else if (from) parts.push(from);
+    else if (to)   parts.push(to);
+  }
+  return parts.join(' | ');
+}
+
+function fmtAvalRefDate(r) {
+  const from = r.avalRefDateFrom ? fmtDate(r.avalRefDateFrom) : '';
+  const to   = r.avalRefDateTo   ? fmtDate(r.avalRefDateTo)   : '';
+  if (from && to && from !== to) return `${from} – ${to}`;
+  if (from) return from;
+  if (to)   return to;
+  return '';
+}
+
+function updateStats() {
+  document.getElementById('statAll').textContent  = requests.length;
+  document.getElementById('statAval').textContent = requests.filter(r=>r.type==='Aval').length;
+  document.getElementById('statPN').textContent   = requests.filter(r=>r.type==='PN').length;
+  document.getElementById('statTL').textContent   = requests.filter(r=>r.type==='TL').length;
+  document.getElementById('statLG').textContent   = requests.filter(r=>r.type==='LG').length;
+  document.getElementById('statNew').textContent  = requests.filter(r=>(r.status||'new')==='new').length;
+  document.getElementById('statPend').textContent = requests.filter(r=>r.status==='pending').length;
+  document.getElementById('statAppr').textContent = requests.filter(r=>r.status==='approved').length;
+}
+
+function deleteReq(id) {
+  if (!confirm('ต้องการลบคำขอนี้ใช่หรือไม่?')) return;
+  deleteFromFirestore(id); // onSnapshot จะ update table อัตโนมัติ
+}
+
+// ─── DETAIL PANEL ────────────────────────────────────────────────────────────
+function viewDetail(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+
+  const row = (label, val) => val
+    ? `<div class="dp-row"><div class="dp-lbl">${label}</div><div class="dp-val">${val}</div></div>`
+    : '';
+
+  const badge = `<span class="badge badge-${r.type.toLowerCase()}" style="font-size:13px;padding:4px 14px">${r.type}</span>`;
+
+  let extra = '';
+  if (r.type === 'Aval') {
+    extra = row('วัตถุประสงค์', r.avalPurpose)
+          + row('ผู้รับผลประโยชน์', r.avalBenef)
+          + row('เลขที่เอกสารอ้างอิง', r.avalRefNo)
+          + row('วันที่เอกสารอ้างอิง', fmtAvalRefDate(r));
+  } else if (r.type === 'PN') {
+    extra = row('วัตถุประสงค์', r.pnPurpose)
+          + row('Against', r.pnAgainst);
+  } else if (r.type === 'TL') {
+    extra = row('วัตถุประสงค์', r.tlPurpose);
+  } else if (r.type === 'LG') {
+    extra = row('ประเภท LG', r.lgSubtype)
+          + row('ผู้รับผลประโยชน์', r.lgBenef);
+  }
+
+  document.getElementById('dpTitle').textContent = `คำขอ #${r.id} – ${r.type}`;
+  document.getElementById('dpBody').innerHTML = `
+    ${row('วันที่ขอ', r.date)}
+    ${row('บริษัท', r.company)}
+    ${row('โครงการ', r.project)}
+    <div class="dp-row"><div class="dp-lbl">ประเภทสินเชื่อ</div><div class="dp-val">${badge}</div></div>
+    ${row('จำนวนเงิน', r.amount.toLocaleString('th-TH',{minimumFractionDigits:2}) + ' บาท')}
+    <hr class="dp-divider">
+    ${extra}
+    <hr class="dp-divider">
+    ${r.attachDesc || r.attachDateFrom ? `<div class="dp-row"><div class="dp-lbl">เอกสารแนบ</div><div class="dp-val">${fmtAttach(r)||'-'}</div></div>` : ''}
+    <div class="dp-row"><div class="dp-lbl">สถานะคำขอ</div><div class="dp-val">${statusBadge(r.status||'new')}</div></div>
+    ${row('หมายเหตุ', r.note)}
+    ${r.editDate ? row('แก้ไขล่าสุด', r.editDate) : ''}
+    <div style="margin-top:20px;display:flex;gap:8px">
+      <button class="btn-save" style="flex:1" onclick="openEdit(${r.id});closeDetailPanel()">✏️ แก้ไข</button>
+      <button class="btn-cancel" onclick="deleteReq(${r.id});closeDetailPanel()">🗑 ลบ</button>
+    </div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetailPanel();
+}
+function closeDetailPanel() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,m,dd] = d.split('-');
+  return `${dd}/${m}/${parseInt(y)+543}`;
+}
+
+// ─── EXPORT EXCEL ───────────────────────────────────────────────────────────
+function exportExcel() {
+  if (requests.length === 0) { alert('ไม่มีข้อมูลคำขอ'); return; }
+
+  // Build rows
+  const headers = [
+    'ลำดับ','วันที่ขอ','บริษัท','โครงการ','ประเภทสินเชื่อ','จำนวนเงิน (บาท)',
+    'วัตถุประสงค์ / รายละเอียด',
+    // Aval
+    'ผู้รับผลประโยชน์ (Aval)','เลขที่เอกสารอ้างอิง','วันที่เอกสารอ้างอิง (จาก)','วันที่เอกสารอ้างอิง (ถึง)',
+    // PN
+    'วัตถุประสงค์ P/N','Against',
+    // LG
+    'ประเภท LG','ผู้รับผลประโยชน์ (LG)',
+    // Attach
+    'เอกสารแนบ','วันที่เอกสารแนบ (จาก)','วันที่เอกสารแนบ (ถึง)',
+    // Status
+    'สถานะคำขอ','หมายเหตุ',
+  ];
+
+  const statusLabel2 = { new:'คำขอใหม่', pending:'อยู่ระหว่างเสนออนุมัติ', approved:'อนุมัติแล้ว' };
+
+  const rows = requests.map((r, i) => [
+    i + 1,
+    r.date,
+    r.company,
+    r.project,
+    r.type,
+    r.amount,
+    getDetail(r),
+    // Aval
+    r.avalBenef    || '',
+    r.avalRefNo    || '',
+    r.avalRefDateFrom ? fmtDate(r.avalRefDateFrom) : '',
+    r.avalRefDateTo   ? fmtDate(r.avalRefDateTo)   : '',
+    // PN
+    r.pnPurpose  || '',
+    r.pnAgainst  || '',
+    // LG
+    r.lgSubtype  || '',
+    r.lgBenef    || '',
+    // Attach
+    r.attachDesc      || '',
+    r.attachDateFrom  ? fmtDate(r.attachDateFrom) : '',
+    r.attachDateTo    ? fmtDate(r.attachDateTo)   : '',
+    // Status
+    statusLabel2[r.status || 'new'] || 'คำขอใหม่',
+    r.note || '',
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:6},{wch:12},{wch:24},{wch:14},{wch:10},{wch:16},
+    {wch:30},{wch:24},{wch:20},{wch:16},{wch:16},
+    {wch:20},{wch:20},{wch:16},{wch:24},
+    {wch:28},{wch:16},{wch:16},
+    {wch:24},{wch:28},
+  ];
+
+  // Style header row (bold + fill) — basic styling via cell meta
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[addr]) continue;
+    ws[addr].s = {
+      font: { bold: true, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '1F3864' } },
+      alignment: { horizontal: 'center', wrapText: true },
+    };
+  }
+  // Amount column (F) as number format
+  for (let R = 1; R <= rows.length; R++) {
+    const addr = XLSX.utils.encode_cell({ r: R, c: 5 });
+    if (ws[addr]) ws[addr].s = { numFmt: '#,##0.00', alignment: { horizontal: 'right' } };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'คำขอสินเชื่อ');
+
+  // Summary sheet
+  const sumHeaders = ['ประเภท','จำนวนคำขอ','รวมจำนวนเงิน (บาท)'];
+  const types = ['Aval','PN','TL','LG'];
+  const sumRows = types.map(t => [
+    t,
+    requests.filter(r => r.type === t).length,
+    requests.filter(r => r.type === t).reduce((a,b) => a + (b.amount||0), 0),
+  ]);
+  sumRows.push(['รวมทั้งหมด', requests.length, requests.reduce((a,b) => a+(b.amount||0),0)]);
+  const ws2 = XLSX.utils.aoa_to_sheet([sumHeaders, ...sumRows]);
+  ws2['!cols'] = [{wch:16},{wch:14},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'สรุป');
+
+  const today = new Date();
+  const fname = `VCB_Request_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
+// ─── KEYBOARD ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeDetailPanel(); }
+});
+
+// ─── INIT DATA (คำขอที่อนุมัติแล้ว) ────────────────────────────────────────
+const initData = [
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 2708881.98, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท ต.วรคุณ จำกัด',
+    avalRefNo: 'PO:20260000027 / ใบแจ้งหนี้6901004 / OC6901-00006',
+    avalRefDateFrom: '2026-03-20', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 2801679.98, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท ต.วรคุณ จำกัด',
+    avalRefNo: 'PO:20260000097 / ใบแจ้งหนี้6901004',
+    avalRefDateFrom: '2026-03-21', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 3236750.00, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท ปฐมศิริโชคบ่อเงิน จำกัด',
+    avalRefNo: 'PO:20260000108',
+    avalRefDateFrom: '2026-03-22', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 2822060.39, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท ซีเค บอร์ไพล์ จำกัด',
+    avalRefNo: 'IN6902-018 / IN6902-020 / IN6902-019',
+    avalRefDateFrom: '2026-03-23', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 1040280.75, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท เซโต (ประเทศ) จำกัด',
+    avalRefNo: 'IV2602-0005',
+    avalRefDateFrom: '2026-03-24', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 651226.26, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'หจก.ทีโอซีพี คอนสตรัคชั่น',
+    avalRefNo: '',
+    avalRefDateFrom: '2026-03-25', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 575793.75, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท ไทยพรีเมี่ยมไพพ์ จำกัด',
+    avalRefNo: 'VCC-001',
+    avalRefDateFrom: '2026-03-26', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 2812968.61, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท เคเอเคที กรุ๊ป จำกัด',
+    avalRefNo: 'BL2026020001',
+    avalRefDateFrom: '2026-03-27', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 1217018.00, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บริษัท แสงทองปิโตรเลียม จำกัด',
+    avalRefNo: 'PO:20260000093',
+    avalRefDateFrom: '2026-03-28', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+  {
+    id: nextId++, date: '07/04/2569', editDate: null,
+    company: 'วิจิตรภัณฑ์ก่อสร้าง', project: 'บางเตย 1',
+    type: 'Aval', amount: 97799.10, status: 'approved',
+    avalPurpose: 'เพื่อชำระค่าสินค้า/บริการ',
+    avalBenef: 'บจ.เคนเบอร์ชัพพลายส์(ไทยแลนด์)',
+    avalRefNo: '2569/02005',
+    avalRefDateFrom: '2026-03-29', avalRefDateTo: '',
+    attachDesc: '', attachDateFrom: '', attachDateTo: '', note: '',
+  },
+];
+// ─── BATCH 2 (51 รายการ) ────────────────────────────────────────────────────
+const moreData = [
+  // ══ VCB บางเตย 1 | 07/04/2569 | approved ══
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:6311400.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท มหาทรัพย์ขนส่ง(1999) จำกัด',avalRefNo:'PO:20260000163 / PO:20260000166',avalRefDateFrom:'2026-03-20',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:916776.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ปฐมศิริโชคบ่อเงิน จำกัด',avalRefNo:'PO:20260000153',avalRefDateFrom:'2026-03-25',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:112778.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท แสงทองปิโตรเลียม จำกัด',avalRefNo:'69-01-02139/6901-02137/69-01-02138/6901-01866',avalRefDateFrom:'2026-04-01',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:1079018.72,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เคเอเคที กรุ๊ป จำกัด',avalRefNo:'BL2026030003',avalRefDateFrom:'2026-04-05',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:3790200.95,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ซีเค บอร์ไพล์ จำกัด',avalRefNo:'IN6903-013 / IN6903-014 / IN6903-015',avalRefDateFrom:'2026-04-08',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:520466.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'หจก.ทีโอซีพี คอนสตรัคชั่น',avalRefNo:'',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:2660259.41,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เซโต (ประเทศ) จำกัด',avalRefNo:'IV2604-0001',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:2438075.25,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท อยุธยาคอนกรีต (2003) จำกัด',avalRefNo:'PO:20260000147',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:671313.27,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ศรีสมุทร ฮาร์ดแวร์ จำกัด',avalRefNo:'IVSM690228-019 / IVSM690316-003',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:6399456.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สามัคคี ผลิตภัณฑ์ คอนกรีต จำกัด',avalRefNo:'PO:20260000010',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:695500.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สามัคคี ผลิตภัณฑ์ คอนกรีต จำกัด',avalRefNo:'WO:20260010',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'07/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:816019.62,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สิริวัฒน์ ค้าเหล็ก จำกัด',avalRefNo:'PO:20260000169',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ── ไม่มีวันที่ขอ | new ──
+  {id:nextId++,date:'',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:1582441.53,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สิริวัฒน์ ค้าเหล็ก จำกัด',avalRefNo:'PO:20260000179',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'Aval',amount:1079018.72,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เคเอเคที กรุ๊ป จำกัด',avalRefNo:'ใบแจ้งหนี้ BL2026040001',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ VCB บางเตย 1 | 02/04/2569 | PN | approved ══
+  {id:nextId++,date:'02/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'PN',amount:3900000.00,status:'approved',pnPurpose:'เพื่อชำระ Aval',pnAgainst:'Workdone',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'02/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางเตย 1',type:'PN',amount:9036708.00,status:'approved',pnPurpose:'เพื่อชำระ Aval',pnAgainst:'Retention งวด 6',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ วีเค บางเตย 2 | no date | new ══
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:1834194.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท แสงทองปิโตรเลียม จำกัด',avalRefNo:'PO:2026000008 / ใบแจ้งหนี้68-01-01399-STP / ใบแจ้งหนี้68-01-01279-STP',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:6473500.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท มหาทรัพย์ขนส่ง(1999) จำกัด',avalRefNo:'PO:20260000010',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:213657.60,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท บีบีวี ซิสเต็มส์ จำกัด',avalRefNo:'PO:20260000004',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:14390569.08,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ธนเทพก่อสร้าง 2019 จำกัด',avalRefNo:'ใบแจ้งหนี้002/0053 / ใบแจ้งหนี้002/0054',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:4991575.68,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สามัคคี ผลิตภัณฑ์ คอนกรีต จำกัด',avalRefNo:'PO:2026000002',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:214000.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สามัคคี ผลิตภัณฑ์ คอนกรีต จำกัด',avalRefNo:'หนังสือสั่งจ้าง:20260001',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:4890804.15,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เค.ซี. คอนกรีต จำกัด',avalRefNo:'PO:20260000011',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีเค',project:'บางเตย 2',type:'Aval',amount:1101967.32,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เค.ซี. คอนกรีต จำกัด',avalRefNo:'หนังสือสั่งจ้าง:20260002',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ ชวนา เอ็นจิเนียร์ริ่ง | no date | no project | new ══
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:124869.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท แสงทองปิโตรเลียม จำกัด',avalRefNo:'ใบแจ้งหนี้69-01-02082-STP',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:792559.60,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ปูนซีเมนต์เอเซีย จำกัด (มหาชน)',avalRefNo:'ใบแจ้งหนี้1132261753/1132262745/1132263002/1132263504/1132265048/1132264339/1132265884/1132266540/1132267225',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:4313895.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ยาใจดีเอ็นจิเนียริ่ง จำกัด',avalRefNo:'ใบแจ้งหนี้ 2569-BP-008 / ใบแจ้งหนี้2569-BP-009 / ใบแจ้งหนี้2569-BT-002',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:103075.24,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ธารวิศว์ก่อสร้าง จำกัด',avalRefNo:'ใบแจ้งหนี้003/2569',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:1313504.65,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท สแปน ซิสเต็มส์ อินเตอร์เนชั่นแนล จำกัด',avalRefNo:'ใบแจ้งหนี้AR12603012 / ใบแจ้งหนี้AR12603011 / ใบแจ้งหนี้AR12602012 / ใบแจ้งหนี้AR12602010',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:855259.56,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ไทยไวร์โพรดัคท์ จำกัด (มหาชน)',avalRefNo:'PO:20260000092#1',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'ชวนา เอ็นจิเนียร์ริ่ง',project:'',type:'Aval',amount:108605.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ซิก้า (ประเทศไทย) จำกัด',avalRefNo:'ใบแจ้งหนี้ SK26-022231',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ VCB บางวัว | 08/04/2569 | approved ══
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:1032889.64,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เมกาคิงส์ เอ็นจิเนียริ่ง จำกัด',avalRefNo:'MKE-01311068 / MKE-202601-001 / MKE-202602-002 / MKE202603-003',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:105043.18,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท อินไวร์ เอ็นจิเนียริ่ง จำกัด',avalRefNo:'20250000475',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:6720000.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'หจก.เอส.เจ.จักรกล',avalRefNo:'IV68/11/003 / IV68/11/008 / IV69/04/003',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:172740.80,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บจ.บีพีเอส เอ็นจิเนียริ่ง',avalRefNo:'BN68111301 / BN68111302',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:791800.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ฟิวเจอร์ซายน์ จำกัด',avalRefNo:'NO:31200004525',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:630000.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เอเชีย ทรานส์ เซอร์วิส จำกัด',avalRefNo:'D-6812016-6812018 / D-6901006-D-6901030',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:646229.78,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท 39 แมททีเรียล จำกัด',avalRefNo:'PO:20260000066',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:609656.90,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ต.วรคุณ จำกัด',avalRefNo:'PO:20260000065',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:5262923.40,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ผลิตภัณฑ์คอนกรีตชลบุรี จำกัด (มหาชน)',avalRefNo:'PO:20260000103',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:183612.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท โมเดิร์น แอสฟัลท์ จำกัด',avalRefNo:'PO:20260000080',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:1923806.50,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท โซล่า แอสฟัลท์ จำกัด',avalRefNo:'PO:20260000081',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:8121463.01,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท นิวเทรนด์ ดีเวล๊อป จำกัด',avalRefNo:'NTD:025/02/2569 / NTD:054/03/2569',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:1076634.00,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ปูนซีเมนต์เอเชีย จำกัด (มหาชน)',avalRefNo:'PO:20260000155',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:1705096.42,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท ส.สนิทวงศ์ ชลบุรี จำกัด',avalRefNo:'PO:20260000135',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:350069.76,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท แก้วเมืองเพชร ขนส่งและการโยธา จำกัด',avalRefNo:'PO:20260000136',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'08/04/2569',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บางวัว',type:'Aval',amount:331249.53,status:'approved',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บจ.เอกไพศาลแมชชีนทูล',avalRefNo:'MA2600399',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ VCB บรมตอน 4 | no date | new ══
+  {id:nextId++,date:'',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บรมตอน 4',type:'Aval',amount:792636.74,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เฮงพาณิชย์ค้าไม้ จำกัด',avalRefNo:'PO:20260000123',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'วิจิตรภัณฑ์ก่อสร้าง',project:'บรมตอน 4',type:'Aval',amount:3916200.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เบสคอน(ไทยแลนด์) จำกัด',avalRefNo:'PO:20260000133',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  // ══ วีแอนด์เค บรมตอน 3 | no date | new ══
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีแอนด์เค',project:'บรมตอน 3',type:'Aval',amount:3916200.00,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เบสคอน(ไทยแลนด์) จำกัด',avalRefNo:'PO:20260000004',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+  {id:nextId++,date:'',editDate:null,company:'กิจการร่วมค้า วีแอนด์เค',project:'บรมตอน 3',type:'Aval',amount:486609.79,status:'new',avalPurpose:'เพื่อชำระค่าสินค้า/บริการ',avalBenef:'บริษัท เอ็ม ดี โปรซัพพลายส์ จำกัด',avalRefNo:'ใบแจ้งหนี้ IV0304/26 / IV0305/26',avalRefDateFrom:'',avalRefDateTo:'',attachDesc:'',attachDateFrom:'',attachDateTo:'',note:''},
+];
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initFirestore(); // เชื่อมต่อ Firestore และ listen real-time
+</script>
+</body>
+</html>
